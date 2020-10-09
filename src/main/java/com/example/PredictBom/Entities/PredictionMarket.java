@@ -6,7 +6,6 @@ import lombok.Setter;
 import org.bson.types.Binary;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-import sun.java2d.pipe.SpanShapeRenderer;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -27,21 +26,24 @@ public class PredictionMarket {
     private Set<Bet> bets;
     private int correctBetId;
     private MarketCategory category;
+//    @Builder.Default
+//    private String createdDate = new SimpleDateFormat("dd/MM/yyyy").format(new Date());
     @Builder.Default
-    private String createdDate = new SimpleDateFormat("dd/MM/yyyy").format(new Date());
+    private String createdDate = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss").format(new Date());
+    @Builder.Default
     private String predictedEndDate;
     private String description;
     private String author;
     @Builder.Default
-    private boolean isSolved = false;
+    private boolean solved = false;
     @Builder.Default
-    private boolean isPublic = false;
+    private boolean published = false;
     private Binary marketCover;
 
 
     public void solveMarket(int correctBetId) {
         this.correctBetId = correctBetId;
-        this.isSolved = true;
+        this.solved = true;
     }
 
     public void addBet(Bet bet){
@@ -49,6 +51,16 @@ public class PredictionMarket {
             this.bets = new HashSet<>();
         }
         bets.add(bet);
+    }
+//
+    public void deleteBet(int betId) {
+        if(bets != null) {
+            Bet betToDelete = Bet.builder().id(betId).build();
+            for(Bet bet : this.bets){
+                System.out.println("Równe : "+bet.equals(betToDelete));
+            }
+            this.bets.remove(betToDelete);
+        }
     }
 
 

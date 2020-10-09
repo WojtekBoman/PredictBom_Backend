@@ -4,18 +4,27 @@ import com.example.PredictBom.Entities.*;
 import com.example.PredictBom.Models.PredictionMarketResponse;
 import com.example.PredictBom.Repositories.BetRepository;
 import com.example.PredictBom.Repositories.PredictionMarketRepository;
+import org.bson.BsonBinarySubType;
+import org.bson.types.Binary;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class PredictionMarketService {
 
     public static final int MARKET_NOT_FOUND = 1;
     public static final int BET_ADDED = 2;
+    public static final int CHANGED_COVER = 3;
+    public static final int BET_NOT_FOUND = 4;
+    public static final int BET_DELETED = 5;
 
 
     @Autowired
@@ -60,14 +69,10 @@ public class PredictionMarketService {
                 marketCategory = MarketCategory.INNE;
                 break;
             default:
-                marketCategory = null;
+                return new PredictionMarketResponse("Wybrano błędną kategorie",null);
         }
 
-        if(marketCategory == null) return new PredictionMarketResponse("Wybrano błędną kategorie",null);
-
-//        System.out.println(counterService.getNextId("markets"));
-
-        System.out.println(description);
+        if(predictedDateEnd.length() == 0) predictedDateEnd = "3000-01-01";
 
         PredictionMarket predictionMarket = PredictionMarket
                 .builder()
@@ -77,7 +82,6 @@ public class PredictionMarketService {
                 .author(username)
                 .predictedEndDate(predictedDateEnd)
                 .description(description)
-//                .marketCover(new Binary(BsonBinarySubType.BINARY, marketCover.getBytes()))
                 .build();
         predictionMarketRepository.save(predictionMarket);
 
@@ -85,11 +89,11 @@ public class PredictionMarketService {
         return new PredictionMarketResponse("Utworzono nowy rynek prognostyczny",predictionMarket);
     }
 
-        public int addBet(int id, String chosenOption){
+        public PredictionMarketResponse addBet(int id, String chosenOption){
 
             Optional<PredictionMarket> optionalPredictionMarket = predictionMarketRepository.findByMarketId(id);
 
-            if(!optionalPredictionMarket.isPresent()) return  MARKET_NOT_FOUND;
+            if(!optionalPredictionMarket.isPresent()) return new PredictionMarketResponse("Nie znaleziono rynku prognostycznego",null);
             Bet newBet = Bet
                 .builder()
                 .id(counterService.getNextId("bets"))
@@ -100,9 +104,25 @@ public class PredictionMarketService {
             predictionMarketRepository.update(predictionMarket);
             betRepository.save(newBet);
 
-            return BET_ADDED;
+            return new PredictionMarketResponse("Dodano zakład",predictionMarket);
 
 //            optionalPredictionMarket.get().;
+        }
+
+        public PredictionMarketResponse deleteBet(int marketId, int betId) {
+            Optional<PredictionMarket> optionalPredictionMarket = predictionMarketRepository.findByMarketId(marketId);
+            if(!optionalPredictionMarket.isPresent()) return new PredictionMarketResponse("Nie znaleziono takiego rynku",null);
+
+            Optional<Bet> optionalBet = betRepository.findBetById(betId);
+            if(!optionalBet.isPresent()) return new PredictionMarketResponse("Nie znaleziono takiego zakładu",null);
+
+            PredictionMarket marketToDeleteBet = optionalPredictionMarket.get();
+            marketToDeleteBet.deleteBet(betId);
+
+            predictionMarketRepository.update(marketToDeleteBet);
+            betRepository.deleteBetById(betId);
+
+            return new PredictionMarketResponse("Usunięto zakład",marketToDeleteBet);
         }
 
         public List<PredictionMarket> getAllPredictionMarkets(){
@@ -111,10 +131,10 @@ public class PredictionMarketService {
 
         public List<PredictionMarket> getPredictionMarketsWhereBetsIsNullByAuthor(String author) {
 
-//        Optional<User> userOptional = userService.getUser(author);
-//        if(!userOptional.isPresent()) return null;
+        Optional<User> userOptional = userService.getUser(author);
+        if(!userOptional.isPresent()) return null;
 
-        return predictionMarketRepository.findByBetsIsNullAndAuthor(author);
+        return predictionMarketRepository.findByBetsIsNullAndAuthor(author,Sort.by(Sort.Direction.ASC,"predictedDateEnd"));
     }
 
         public PredictionMarket getMarketById(int id) {
@@ -122,6 +142,46 @@ public class PredictionMarketService {
 
             return optionalPredictionMarket.orElse(null);
         }
+
+        public PredictionMarketResponse setMarketCover(int id, MultipartFile marketCover) throws IOException {
+            Optional<PredictionMarket> optionalPredictionMarket = predictionMarketRepository.findByMarketId(id);
+
+            if(!optionalPredictionMarket.isPresent()) return new PredictionMarketResponse("Nie znaleziono rynku prognostycznego",null);
+
+            PredictionMarket predictionMarket = optionalPredictionMarket.get();
+            predictionMarket.setMarketCover(new Binary(BsonBinarySubType.BINARY, marketCover.getBytes()));
+            predictionMarketRepository.update(predictionMarket);
+
+            return new PredictionMarketResponse("Zmieniono okładkę",predictionMarket);
+        }
+
+        public List<PredictionMarket> getFilteredMarketsWaitingForBets(String username, String marketTitle, String[] marketCategory, String sortAttribute, String sortDirection) {
+
+            Optional<User> userOptional = userService.getUser(username);
+            if(!userOptional.isPresent()) return null;
+
+            List<PredictionMarket> predictionMarketsList = new ArrayList<>(predictionMarketRepository.findByBetsIsNullAndAuthor(username, Sort.by(Sort.Direction.fromString(sortDirection),sortAttribute)));
+            return getPredictionMarkets(marketTitle, marketCategory, predictionMarketsList);
+        }
+
+        public List<PredictionMarket> getFilteredPrivateMarkets(String username, String marketTitle, String[] marketCategory, String sortAttribute, String sortDirection){
+            Optional<User> userOptional = userService.getUser(username);
+            if(!userOptional.isPresent()) return null;
+
+            List<PredictionMarket> predictionMarketsList = new ArrayList<>(predictionMarketRepository.findByPublishedFalse(username,Sort.by(Sort.Direction.fromString(sortDirection),sortAttribute)));
+
+            return getPredictionMarkets(marketTitle, marketCategory, predictionMarketsList);
+        }
+
+    private List<PredictionMarket> getPredictionMarkets(String marketTitle, String[] marketCategory, List<PredictionMarket> predictionMarketsList) {
+        List<PredictionMarket> marketsFilteredByTitle = predictionMarketsList.stream().filter(item -> item.getTopic().toLowerCase().contains(marketTitle.toLowerCase())).collect(Collectors.toList());
+        if(marketCategory.length == 0) return marketsFilteredByTitle;
+        List<PredictionMarket> filteredMarkets = new ArrayList<>();
+        for(String market : marketCategory) {
+            filteredMarkets.addAll(marketsFilteredByTitle.stream().filter(item -> item.getCategory().toString().toLowerCase().contains(market.toLowerCase())).collect(Collectors.toList()));
+        }
+        return filteredMarkets;
+    }
 
 
 }

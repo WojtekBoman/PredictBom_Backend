@@ -18,6 +18,7 @@ public class PredictionMarketRepositoryCustomImpl implements PredictionMarketRep
         Query query = new Query(Criteria.where("_id").is(predictionMarket.getMarketId()));
         Update update = new Update();
         update.set("bets",predictionMarket.getBets());
+        update.set("marketCover",predictionMarket.getMarketCover());
         UpdateResult result = mongoTemplate.updateFirst(query, update, PredictionMarket.class);
         return result.getModifiedCount()>0;
     }
