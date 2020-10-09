@@ -6,6 +6,6 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import java.util.Optional;
 
 public interface BetRepository extends MongoRepository<Bet,String> {
-    Optional<Bet> findBetById();
-
+    Optional<Bet> findBetById(int betId);
+    Bet deleteBetById(int betId);
 }

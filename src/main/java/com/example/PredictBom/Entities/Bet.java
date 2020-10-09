@@ -8,6 +8,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 @Getter
@@ -37,4 +38,13 @@ public class Bet {
         historyOfPricesNoContracts.add(price);
     }
 
+    @Override
+    public boolean equals(Object o) {
+        return id == ((Bet) o).getId();
+    }
+
+    @Override
+    public int hashCode() {
+        return ((Integer) id).hashCode();
+    }
 }

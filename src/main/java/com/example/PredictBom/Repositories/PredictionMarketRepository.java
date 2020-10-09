@@ -2,6 +2,7 @@ package com.example.PredictBom.Repositories;
 
 import com.example.PredictBom.Entities.Moderator;
 import com.example.PredictBom.Entities.PredictionMarket;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.List;
@@ -11,7 +12,9 @@ public interface PredictionMarketRepository extends MongoRepository<PredictionMa
 
     List<PredictionMarket> findAll();
 
-    List<PredictionMarket> findByBetsIsNullAndAuthor(String author);
+    List<PredictionMarket> findByBetsIsNullAndAuthor(String author, Sort sort);
+
+    List<PredictionMarket> findByPublishedFalse(String author, Sort sort);
 
     Optional<PredictionMarket> findByMarketId(Integer marketId);
 
