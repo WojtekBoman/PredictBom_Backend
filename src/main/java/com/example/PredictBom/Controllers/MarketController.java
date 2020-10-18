@@ -82,6 +82,18 @@ public class MarketController {
         }
     }
 
+    @PutMapping("/edit/{id}")
+    public ResponseEntity<?> editMarketById(@PathVariable("id") int marketId, @RequestBody CreateMarketRequest editRequest) {
+        PredictionMarketResponse response = predictionMarketService.editMarket(marketId,editRequest.getMarketTitle(),editRequest.getPredictedDateEnd(),editRequest.getDescription());
+
+        if(response.getPredictionMarket() != null) {
+            return ResponseEntity.ok(response);
+        }else{
+            return ResponseEntity.badRequest().body(response);
+        }
+
+    }
+
     @PostMapping(value = "/marketCover/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> setMarketCover(@PathVariable("id") int marketId, @RequestParam MultipartFile marketCover) throws IOException {
 
@@ -134,5 +146,10 @@ public class MarketController {
         return ResponseEntity.ok(pages);
     }
 
+    @GetMapping("/offers")
+    public ResponseEntity<?> getOffers(@RequestParam int betId, @RequestParam boolean contractOption) {
+
+        return ResponseEntity.ok(predictionMarketService.buyContract(betId,contractOption,9000,60));
+    }
 
 }

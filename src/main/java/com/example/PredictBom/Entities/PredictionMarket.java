@@ -56,9 +56,6 @@ public class PredictionMarket {
     public void deleteBet(int betId) {
         if(bets != null) {
             Bet betToDelete = Bet.builder().id(betId).build();
-            for(Bet bet : this.bets){
-                System.out.println("Równe : "+bet.equals(betToDelete));
-            }
             this.bets.remove(betToDelete);
         }
     }

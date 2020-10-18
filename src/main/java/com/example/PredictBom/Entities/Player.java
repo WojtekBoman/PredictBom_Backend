@@ -1,8 +1,13 @@
 package com.example.PredictBom.Entities;
 
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Document(collection = "players")
+@Getter
+@Setter
 public class Player extends User {
 
     private float budget;
