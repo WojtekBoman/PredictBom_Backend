@@ -1,11 +1,11 @@
 package com.example.PredictBom.Controllers;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.text.ParseException;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
+import com.example.PredictBom.ChangePasswordWithTokenRequest;
 import com.example.PredictBom.Entities.*;
 import com.example.PredictBom.Payload.Request.LoginRequest;
 import com.example.PredictBom.Payload.Request.SignupRequest;
@@ -17,21 +17,28 @@ import com.example.PredictBom.Repositories.RoleRepository;
 import com.example.PredictBom.Repositories.UserRepository;
 import com.example.PredictBom.Security.JWT.JwtUtils;
 import com.example.PredictBom.Security.Services.UserDetailsImpl;
+import com.example.PredictBom.Services.PasswordResetTokenService;
+import com.example.PredictBom.Services.UserService;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.mongodb.core.aggregation.ArithmeticOperators;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
+import javax.xml.bind.DatatypeConverter;
+
+import static javax.crypto.Cipher.SECRET_KEY;
 
 
 @CrossOrigin(origins = "*", maxAge = 3600)
@@ -46,6 +53,9 @@ public class AuthController {
     UserRepository userRepository;
 
     @Autowired
+    UserService userService;
+
+    @Autowired
     RoleRepository roleRepository;
 
     @Autowired
@@ -58,7 +68,14 @@ public class AuthController {
     ModeratorRepository moderatorRepository;
 
     @Autowired
+    JavaMailSender emailSender;
+
+    @Autowired
+    PasswordResetTokenService passwordResetTokenService;
+
+    @Autowired
     JwtUtils jwtUtils;
+
 
     @PostMapping("/signin")
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
@@ -76,7 +93,7 @@ public class AuthController {
 
         return ResponseEntity.ok(new JwtResponse(jwt,
                 userDetails.getUsername(),
-                userDetails.getEmail(),userDetails.getFirstName(),userDetails.getSurname(),
+                userDetails.getEmail(), userDetails.getFirstName(), userDetails.getSurname(),
                 roles));
     }
 
@@ -95,7 +112,7 @@ public class AuthController {
         }
 
         // Create new user's account
-        User user = new User(signUpRequest.getUsername(),signUpRequest.getFirstName(),signUpRequest.getSurname(),
+        User user = new User(signUpRequest.getUsername(), signUpRequest.getFirstName(), signUpRequest.getSurname(),
                 signUpRequest.getEmail(),
                 encoder.encode(signUpRequest.getPassword()));
 
@@ -107,9 +124,9 @@ public class AuthController {
                     .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
             roles.add(userRole);
 
-            Player player = new Player(signUpRequest.getUsername(),signUpRequest.getFirstName(),signUpRequest.getSurname(),
+            Player player = new Player(signUpRequest.getUsername(), signUpRequest.getFirstName(), signUpRequest.getSurname(),
                     signUpRequest.getEmail(),
-                    encoder.encode(signUpRequest.getPassword()),0,0,0);
+                    encoder.encode(signUpRequest.getPassword()), 0, 0, 0);
 
             player.setRoles(roles);
 
@@ -128,7 +145,7 @@ public class AuthController {
                                 .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
                         roles.add(modRole);
 
-                        Moderator moderator = new Moderator(signUpRequest.getUsername(),signUpRequest.getFirstName(),signUpRequest.getSurname(),
+                        Moderator moderator = new Moderator(signUpRequest.getUsername(), signUpRequest.getFirstName(), signUpRequest.getSurname(),
                                 signUpRequest.getEmail(),
                                 encoder.encode(signUpRequest.getPassword()));
 
@@ -142,9 +159,9 @@ public class AuthController {
                                 .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
                         roles.add(userRole);
 
-                        Player player = new Player(signUpRequest.getUsername(),signUpRequest.getFirstName(),signUpRequest.getSurname(),
+                        Player player = new Player(signUpRequest.getUsername(), signUpRequest.getFirstName(), signUpRequest.getSurname(),
                                 signUpRequest.getEmail(),
-                                encoder.encode(signUpRequest.getPassword()),0,0,0);
+                                encoder.encode(signUpRequest.getPassword()), 0, 0, 0);
 
                         player.setRoles(roles);
 
@@ -158,4 +175,58 @@ public class AuthController {
 
         return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
     }
+
+    @PostMapping("/user/resetPassword")
+    public ResponseEntity resetPassword(HttpServletRequest request, @RequestParam("username") String email) {
+        Optional<User> userOpt = userRepository.findByEmail(email);
+        if (!userOpt.isPresent()) {
+            return ResponseEntity.badRequest().body("Nie znaleziono żadnego użytkownika o tym adresie e-mail");
+        }
+        String token = UUID.randomUUID().toString();
+        User user = userOpt.get();
+        userService.createPasswordResetTokenForUser(user, token);
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom("predictBom@gmail.com");
+        message.setTo(email);
+        message.setText(token);
+        message.setSubject("Reset hasła - Predict Bom");
+        emailSender.send(message);
+
+        return ResponseEntity.ok("Wysłano maila");
+    }
+
+    @GetMapping("/user/changePassword")
+    public ResponseEntity showChangePasswordPage(
+            @RequestParam("token") String token) throws ParseException {
+
+        int result = userService.validatePasswordResetToken(token);
+        switch (result) {
+            case UserService.CORRECT_TOKEN:
+                return ResponseEntity.ok("Podano prawidłowy token");
+            case UserService.EXPIRED_TOKEN:
+                return ResponseEntity.badRequest().body("Token wygasnął");
+            case UserService.INVALID_TOKEN:
+                return ResponseEntity.badRequest().body("Nieprawidłowy token");
+            default:
+                return ResponseEntity.badRequest().body("Wystąpił błąd");
+        }
+    }
+
+
+    @PostMapping("/user/changePassword")
+    public ResponseEntity changePasswordWithToken(@RequestBody ChangePasswordWithTokenRequest tokenRequest) throws ParseException {
+        int status = userService.changePasswordWithToken(tokenRequest.getNewPassword(),tokenRequest.getRepeatedPassword(),tokenRequest.getToken());
+
+        switch (status){
+            case UserService.UPDATED_PASSWORD:
+                return ResponseEntity.ok("Zmieniono hasło");
+            case UserService.EXPIRED_TOKEN:
+                return ResponseEntity.badRequest().body("Token wygasnął");
+            case UserService.INVALID_TOKEN:
+                return ResponseEntity.badRequest().body("Nieprawidłowy token");
+            default:
+                return ResponseEntity.badRequest().body("Wystąpił błąd");
+    }
+}
+
 }
