@@ -12,4 +12,8 @@ public interface ContractRepository extends MongoRepository<Contract,String>, Co
     Contract findById(int id);
     List<Contract> deleteByBetId(int id);
     List<Contract> findAllByBetIdAndContractOptionAndOffersIsNotNull(int betId, boolean contractOption);
+    List<Contract> findAllByBetIdAndPlayerIdIsNotNull(int betId);
+    List<Contract> findByPlayerId(String playerId);
+    Optional<Contract> findByPlayerIdAndBetIdAndContractOptionAndValueOfShares(String playerId,int betId, boolean contractOption, double valueOfShares);
+    Contract findByBetIdAndContractOption(int betId, boolean contractOption);
 }

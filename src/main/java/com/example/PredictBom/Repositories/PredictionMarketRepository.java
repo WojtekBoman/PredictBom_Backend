@@ -20,4 +20,6 @@ public interface PredictionMarketRepository extends MongoRepository<PredictionMa
 
     Optional<PredictionMarket> findByTopic(String topic);
 
+    List<PredictionMarket> findByPublishedTrue(Sort sort);
+
 }

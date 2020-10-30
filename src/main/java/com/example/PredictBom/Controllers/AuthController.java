@@ -91,6 +91,8 @@ public class AuthController {
                 .map(item -> item.getAuthority())
                 .collect(Collectors.toList());
 
+
+
         return ResponseEntity.ok(new JwtResponse(jwt,
                 userDetails.getUsername(),
                 userDetails.getEmail(), userDetails.getFirstName(), userDetails.getSurname(),
@@ -131,6 +133,17 @@ public class AuthController {
             player.setRoles(roles);
 
             playerRepository.save(player);
+
+//            Role modRole = roleRepository.findByName(ERole.ROLE_MODERATOR)
+//                    .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+//            roles.add(modRole);
+//
+//            Moderator moderator = new Moderator(signUpRequest.getUsername(), signUpRequest.getFirstName(), signUpRequest.getSurname(),
+//                    signUpRequest.getEmail(),
+//                    encoder.encode(signUpRequest.getPassword()));
+//
+//            moderator.setRoles(roles);
+//            moderatorRepository.save(moderator);
         } else {
             strRoles.forEach(role -> {
                 switch (role) {
@@ -161,7 +174,7 @@ public class AuthController {
 
                         Player player = new Player(signUpRequest.getUsername(), signUpRequest.getFirstName(), signUpRequest.getSurname(),
                                 signUpRequest.getEmail(),
-                                encoder.encode(signUpRequest.getPassword()), 0, 0, 0);
+                                encoder.encode(signUpRequest.getPassword()), 1000, 0, 0);
 
                         player.setRoles(roles);
 

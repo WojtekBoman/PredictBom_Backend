@@ -1,20 +1,17 @@
 package com.example.PredictBom.Models;
 
+import com.example.PredictBom.Entities.Bet;
 import com.example.PredictBom.Entities.PredictionMarket;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
+
+@Builder
 @Getter
 @Setter
-@Builder
-public class PredictionMarketResponse {
-
+public class ContractDetailsResponse {
     private String info;
     private PredictionMarket predictionMarket;
-
-    public PredictionMarketResponse(String info, PredictionMarket predictionMarket) {
-        this.info = info;
-        this.predictionMarket = predictionMarket;
-    }
+    private Bet bet;
 }

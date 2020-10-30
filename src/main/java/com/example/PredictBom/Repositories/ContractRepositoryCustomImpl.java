@@ -18,6 +18,7 @@ public class ContractRepositoryCustomImpl implements ContractRepositoryCustom {
         Query query = new Query(Criteria.where("_id").is(contract.getId()));
         Update update = new Update();
         update.set("offers",contract.getOffers());
+        update.set("countOfContracts",contract.getCountOfContracts());
         UpdateResult result = mongoTemplate.updateFirst(query, update, Contract.class);
         return result.getModifiedCount()>0;
     }

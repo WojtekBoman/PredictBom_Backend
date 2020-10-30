@@ -19,8 +19,10 @@ public class Bet {
 
     @Id
     private int id;
-
+    private int marketId;
     private String chosenOption;
+    private double bestYesPrice;
+    private double bestNoPrice;
     private List<Price> historyOfPricesYesContracts;
     private List<Price> historyOfPricesNoContracts;
 

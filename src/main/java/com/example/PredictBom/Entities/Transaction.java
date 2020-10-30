@@ -6,6 +6,8 @@ import lombok.Setter;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import javax.persistence.Id;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 @Getter
 @Setter
@@ -15,4 +17,12 @@ public class Transaction {
 
     @Id
     private int id;
+    @Builder.Default
+    private String transactionDate = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss").format(new Date());
+    private boolean option;
+    private int countOfShares;
+    private double price;
+    private int betId;
+    private String dealer;
+    private String purchaser;
 }

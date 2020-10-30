@@ -1,6 +1,9 @@
 package com.example.PredictBom.Services;
 
 import com.example.PredictBom.Entities.*;
+import com.example.PredictBom.Models.BetPrice;
+import com.example.PredictBom.Models.BuyContractResponse;
+import com.example.PredictBom.Models.MarketWithBetsPricesResponse;
 import com.example.PredictBom.Models.PredictionMarketResponse;
 import com.example.PredictBom.Repositories.*;
 import org.bson.BsonBinarySubType;
@@ -8,6 +11,7 @@ import org.bson.types.Binary;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -44,6 +48,9 @@ public class PredictionMarketService {
 
     @Autowired
     PredictionMarketRepository predictionMarketRepository;
+
+    @Autowired
+    TransactionRepository transactionRepository;
 
     @Autowired
     PlayerRepository playerRepository;
@@ -98,14 +105,16 @@ public class PredictionMarketService {
         return new PredictionMarketResponse("Utworzono nowy rynek prognostyczny",predictionMarket);
     }
 
-        public PredictionMarketResponse addBet(int id, String chosenOption){
+        @Transactional
+        public MarketWithBetsPricesResponse addBet(int id, int yesPrice, int noPrice, String chosenOption)    {
 
             Optional<PredictionMarket> optionalPredictionMarket = predictionMarketRepository.findByMarketId(id);
 
-            if(!optionalPredictionMarket.isPresent()) return new PredictionMarketResponse("Nie znaleziono rynku prognostycznego",null);
+            if(!optionalPredictionMarket.isPresent()) return MarketWithBetsPricesResponse.builder().info("Nie znaleziono rynku").build();
             Bet newBet = Bet
                 .builder()
                 .id(counterService.getNextId("bets"))
+                 .marketId(id)
                 .chosenOption(chosenOption)
                 .build();
             PredictionMarket predictionMarket = optionalPredictionMarket.get();
@@ -113,8 +122,11 @@ public class PredictionMarketService {
             predictionMarketRepository.update(predictionMarket);
             betRepository.save(newBet);
 
-            Contract contractTrue = Contract.builder().id(counterService.getNextId("contracts")).betId(newBet.getId()).countOfContracts(0).valueOfShares(0.50F).contractOption(true).build();
-            Contract contractFalse = Contract.builder().id(counterService.getNextId("contracts")).betId(newBet.getId()).countOfContracts(0).valueOfShares(0.50F).contractOption(false).build();
+            double contractYesPrice =  Math.round((double)yesPrice) / 100.0;
+            double contractNoPrice = Math.round((double)noPrice) /100.0;
+
+            Contract contractTrue = Contract.builder().id(counterService.getNextId("contracts")).betId(newBet.getId()).countOfContracts(0).valueOfShares(contractYesPrice).contractOption(true).build();
+            Contract contractFalse = Contract.builder().id(counterService.getNextId("contracts")).betId(newBet.getId()).countOfContracts(0).valueOfShares(contractNoPrice).contractOption(false).build();
             SalesOffer offerTrue = SalesOffer.builder().id(counterService.getNextId("offers")).contractId(contractTrue.getId()).countOfContracts(10000).valueOfShares(contractTrue.getValueOfShares()).build();
             SalesOffer offerFalse = SalesOffer.builder().id(counterService.getNextId("offers")).contractId(contractFalse.getId()).countOfContracts(10000).valueOfShares(contractFalse.getValueOfShares()).build();
             contractTrue.addOffer(offerTrue);
@@ -124,26 +136,36 @@ public class PredictionMarketService {
             salesOfferRepository.save(offerTrue);
             salesOfferRepository.save(offerFalse);
 
+            BetPrice betPrice = BetPrice.builder().betId(newBet.getId()).yesPrice(yesPrice).noPrice(noPrice).build();
 
-            return new PredictionMarketResponse("Dodano zakład",predictionMarket);
+            return MarketWithBetsPricesResponse.builder().info("Dodano zakład").predictionMarket(predictionMarket).betPrice(betPrice).build();
 
 //            optionalPredictionMarket.get().;
         }
 
+        @Transactional
         public PredictionMarketResponse deleteBet(int marketId, int betId) {
             Optional<PredictionMarket> optionalPredictionMarket = predictionMarketRepository.findByMarketId(marketId);
             if(!optionalPredictionMarket.isPresent()) return new PredictionMarketResponse("Nie znaleziono takiego rynku",null);
 
-            Optional<Bet> optionalBet = betRepository.findBetById(betId);
+            Optional<Bet> optionalBet = betRepository.findById(betId);
             if(!optionalBet.isPresent()) return new PredictionMarketResponse("Nie znaleziono takiego zakładu",null);
 
             PredictionMarket marketToDeleteBet = optionalPredictionMarket.get();
-            marketToDeleteBet.deleteBet(betId);
 
+            marketToDeleteBet.deleteBet(betId);
+            if(marketToDeleteBet.getBets().size() == 0) marketToDeleteBet.setBets(null);
             predictionMarketRepository.update(marketToDeleteBet);
             betRepository.deleteBetById(betId);
-            contractRepository.deleteByBetId(betId);
+//            contractRepository.deleteByBetId(betId);
+            List<Contract> contractList = contractRepository.deleteByBetId(betId);
+            for(Contract contract : contractList) {
 
+                salesOfferRepository.deleteByContractId(contract.getId());
+            }
+
+
+//           contractRepository.deleteByBetId(betId);
 
             return new PredictionMarketResponse("Usunięto zakład",marketToDeleteBet);
         }
@@ -225,41 +247,95 @@ public class PredictionMarketService {
         return filteredMarkets;
     }
 
-    public List<SalesOffer> buyContract(int betId, boolean option, int countOfShares, float maxValue) {
+//    private List<BetPrice> getPrices(int marketId){
+//        Optional<PredictionMarket> marketOptional = predictionMarketRepository.findByMarketId(marketId);
+//        if(marketOptional.isPresent()) return null;
+//
+//        for(Bet bet :marketOptional.get().getBets()){
+//            Contract contract = contractRepository.findByBetId(bet)
+//        }
+//    }
+
+    public BetPrice getPrice(int betId) {
+
+        double yesPrice,noPrice = 0;
+
+        Optional<Transaction> transactionYes =  transactionRepository.findFirstByBetIdAndAndOptionOrderByTransactionDateDesc(betId, true);
+        Optional<Transaction> transactionNo = transactionRepository.findFirstByBetIdAndAndOptionOrderByTransactionDateDesc(betId,false);
+
+        if(transactionYes.isPresent()){
+            yesPrice = transactionYes.get().getPrice();
+        }else{
+            Contract contract = contractRepository.findByBetIdAndContractOption(betId, true);
+            yesPrice = contract.getOffers().stream().findFirst().get().getValueOfShares();
+        }
+
+        if(transactionNo.isPresent()){
+            noPrice = transactionNo.get().getPrice();
+        }else{
+            Contract contract = contractRepository.findByBetIdAndContractOption(betId, false);
+            noPrice = contract.getOffers().stream().findFirst().get().getValueOfShares();
+        }
+
+        return BetPrice.builder().betId(betId).yesPrice(yesPrice).noPrice(noPrice).build();
+
+    }
+
+    @Transactional
+    public BuyContractResponse buyContract(String username, int betId, boolean option, int countOfShares, int maxValue) {
+        //Search contracts with matched bets and option with offers
+        System.out.println("Contract option" + option);
         List<Contract> contracts = contractRepository.findAllByBetIdAndContractOptionAndOffersIsNotNull(betId,option);
 
-        if(contracts.isEmpty()) return null;
+        Player purchaser = playerRepository.findByUsername(username);
+
+        //Not found any offers
+        if(contracts.isEmpty()) return BuyContractResponse.builder().info("Nie znaleziono żadnych ofert dla wybranego zakładu").build();
 
         List<SalesOffer> salesOffers = new ArrayList<>();
+        double maxValueFloat =  Math.round((double)maxValue) / 100.0;
+        System.out.println(maxValueFloat);
         int shares = 0;
         int counter = 0;
         for(Contract contract : contracts){
-            salesOffers.addAll(contract.getOffers().stream().filter(offer -> offer.getValueOfShares() <= maxValue).collect(Collectors.toList()));
+            //Collect all offers where value is less than user maxValue
+            salesOffers.addAll(contract.getOffers().stream().filter(offer -> offer.getValueOfShares() <= maxValueFloat).collect(Collectors.toList()));
             shares += salesOffers.stream().mapToInt(SalesOffer::getCountOfContracts).sum();
             counter++;
         }
 
         Collections.sort(salesOffers);
 
-        if(shares < countOfShares) return null;
-        if(salesOffers.isEmpty()) return null;
-
-        float paySum = 0;
+        if(shares < countOfShares) return BuyContractResponse.builder().info("Nie znaleziono wystarczającej liczby kontraktów").build();
+        if(salesOffers.isEmpty()) return BuyContractResponse.builder().info("Nie znaleziono ofert pasujących do twoich preferencji").build();
+        double paySum = 0;
         shares = countOfShares;
+        List<Transaction> transactions = new ArrayList<>();
         for(SalesOffer offer : salesOffers) {
             if(shares > 0) {
+                //Case where whole offer is sold
                 if(countOfShares > offer.getCountOfContracts()){
+                    //Update contract
                     paySum = offer.getValueOfShares() * offer.getCountOfContracts();
                     shares -= offer.getCountOfContracts();
                     Contract contract = contractRepository.findById(offer.getContractId());
                     contract.deleteOffer(offer.getId());
                     salesOfferRepository.delete(offer);
-//                    if(!contract.getPlayerId().equals(null)){
-//                        Player player = playerRepository.findByUsername(contract.getPlayerId());
-//                        player.setBudget(player.getBudget()+offer.getValueOfShares()*offer.getCountOfContracts());
-//                        playerRepository.update(player);
-//                    }
+                    //Update seller budget
+                    if(contract.getPlayerId() != null){
+                        Player player = playerRepository.findByUsername(contract.getPlayerId());
+                        double money = player.getBudget()+offer.getValueOfShares()*offer.getCountOfContracts();
+                        player.setBudget((float) money);
+                        playerRepository.update(player);
+                    }
+                    //Update purchaser money
 
+                    Transaction transaction = Transaction.builder().id(counterService.getNextId("transactions")).countOfShares(offer.getCountOfContracts()).price(offer.getValueOfShares()).betId(betId).option(option).purchaser(purchaser.getUsername()).dealer(contract.getPlayerId()).build();
+                    transactionRepository.save(transaction);
+                    transactions.add(transaction);
+                    paySum += offer.getValueOfShares() * offer.getCountOfContracts();
+
+                //Case where only part of offer is sold
                 }else{
                     paySum = shares * offer.getValueOfShares();
                     offer.setCountOfContracts(offer.getCountOfContracts() - shares);
@@ -268,16 +344,109 @@ public class PredictionMarketService {
                     contract.deleteOffer(offer.getId());
                     contract.addOffer(offer);
                     contractRepository.update(contract);
+                    if(contract.getPlayerId() != null){
+                        Player player = playerRepository.findByUsername(contract.getPlayerId());
+                        double money = player.getBudget()+offer.getValueOfShares()*offer.getCountOfContracts();
+                        player.setBudget((float) money);
+                        playerRepository.update(player);
+                    }
+                    //Update purchaser money
+                    Transaction transaction = Transaction.builder().id(counterService.getNextId("transactions")).countOfShares(shares).price(offer.getValueOfShares()).betId(betId).option(option).purchaser(purchaser.getUsername()).dealer(contract.getPlayerId()).build();
+                    transactionRepository.save(transaction);
+                    transactions.add(transaction);
                 }
 
-                paySum += offer.getValueOfShares();
+
             }
         }
-        System.out.println("Shares "+shares+", sum "+paySum);
 
-        return salesOffers;
+        int buyShares = 0;
+        double currentPrice = transactions.get(0).getPrice();
+        for(Transaction transaction : transactions) {
+            if(transaction.getPrice() > currentPrice){
+                currentPrice = transaction.getPrice();
+                findContractWithSamePrice(username, betId, option, buyShares, currentPrice);
+                buyShares = 0;
+            }
+            buyShares += transaction.getCountOfShares();
+        }
+
+        Contract contract = findContractWithSamePrice(username, betId, option, buyShares, currentPrice);
+        purchaser.setBudget(purchaser.getBudget() - (float)paySum);
+        playerRepository.update(purchaser);
+
+        return BuyContractResponse.builder().info("Zakupiono nowy kontrakt").purchaser(purchaser).boughtContract(contract).build();
     }
 
+    private Contract findContractWithSamePrice(String username, int betId, boolean option, int buyShares, double currentPrice) {
+        Optional<Contract> optionalContract = contractRepository.findByPlayerIdAndBetIdAndContractOptionAndValueOfShares(username,betId,option,currentPrice);
+        Contract contract;
+        if(optionalContract.isPresent()){
+            System.out.println("No znalazłem coś tam");
+            contract = optionalContract.get();
+            contract.setCountOfContracts(contract.getCountOfContracts() + buyShares);
+            contractRepository.update(contract);
+        }else{
+            contract = Contract.builder().id(counterService.getNextId("contracts")).betId(betId).contractOption(option).countOfContracts(buyShares).valueOfShares(currentPrice).playerId(username).build();
+            contractRepository.save(contract);
+        }
+        return contract;
+    }
+
+    public PredictionMarketResponse makeMarketPublic(int marketId) {
+        Optional<PredictionMarket> marketOpt = predictionMarketRepository.findByMarketId(marketId);
+
+        if(!marketOpt.isPresent()) {
+            return new PredictionMarketResponse("Nie znalezieono rynku",null);
+        }
+
+        PredictionMarket market = marketOpt.get();
+
+        if(market.isPublished()) return new PredictionMarketResponse("Rynek jest już publiczny",null);
+
+        market.setPublished(true);
+        predictionMarketRepository.update(market);
+        return new PredictionMarketResponse("Upubliczniono rynek",market);
+    }
+
+    public List<PredictionMarket> getPublicMarkets(String marketTitle, String[] marketCategory, String sortAttribute, String sortDirection) {
+        List<PredictionMarket> predictionMarketsList = new ArrayList<>(predictionMarketRepository.findByPublishedTrue(Sort.by(Sort.Direction.fromString(sortDirection),sortAttribute)));
+        return getPredictionMarkets(marketTitle, marketCategory, predictionMarketsList);
+    }
+
+    @Transactional
+    public PredictionMarketResponse solveMarket(int marketId,int correctBetId) {
+
+        Optional<PredictionMarket> optMarket = predictionMarketRepository.findByMarketId(marketId);
+
+        if(!optMarket.isPresent()) return new PredictionMarketResponse("Nie znaleziono rynku",null);
+        PredictionMarket market = optMarket.get();
+        List<Contract> contractsYes = contractRepository.findAllByBetIdAndPlayerIdIsNotNull(correctBetId);
+        System.out.println(contractsYes);
+        if(contractsYes.size() > 0) updatePlayersBudget(contractsYes);
 
 
+        List<Bet> bets = market.getBets().stream().filter(bet -> bet.getId() != correctBetId).collect(Collectors.toList());
+        for(Bet bet : bets) {
+            List<Contract> contracts = contractRepository.findAllByBetIdAndPlayerIdIsNotNull(bet.getId());
+            if(contracts.size() > 0)updatePlayersBudget(contracts);
+
+        }
+
+        market.setSolved(true);
+        predictionMarketRepository.update(market);
+
+        return new PredictionMarketResponse("Rozwiązano rynek",market);
+
+}
+
+    private void updatePlayersBudget(List<Contract> contracts) {
+        for(Contract contract : contracts) {
+            int countOfShares = contract.getCountOfContracts();
+            if(contract.getOffers() != null)     for (SalesOffer offer : contract.getOffers()) countOfShares += offer.getCountOfContracts();
+            Player player = playerRepository.findByUsername(contract.getPlayerId());
+            player.setBudget(player.getBudget() + countOfShares);
+            playerRepository.update(player);
+        }
+    }
 }
