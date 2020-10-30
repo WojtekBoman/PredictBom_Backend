@@ -21,7 +21,7 @@ public class Contract {
     private int betId;
     private String playerId;
     private boolean contractOption;
-    private float valueOfShares;
+    private double valueOfShares;
     private int countOfContracts;
     private HashSet<SalesOffer> offers;
 

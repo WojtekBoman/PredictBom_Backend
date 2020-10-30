@@ -24,7 +24,7 @@ public class SalesOffer implements Comparable<SalesOffer> {
     private int countOfContracts;
     @Builder.Default
     private String createdDate = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss").format(new Date());
-    private float valueOfShares;
+    private double valueOfShares;
 
 
     @Override

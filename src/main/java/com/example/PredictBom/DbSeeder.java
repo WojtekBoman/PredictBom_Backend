@@ -9,10 +9,10 @@ import org.springframework.stereotype.Component;
 @Component
 public class DbSeeder implements CommandLineRunner {
 
-//    private RoleRepository roleRepository;
-//
-//    public DbSeeder(RoleRepository roleRepository) {this.roleRepository = roleRepository;}
-//
+    private RoleRepository roleRepository;
+
+    public DbSeeder(RoleRepository roleRepository) {this.roleRepository = roleRepository;}
+
     @Override
     public void run(String... args) throws Exception {
 //        Role player = new Role(ERole.ROLE_PLAYER);

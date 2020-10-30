@@ -1,7 +1,12 @@
 package com.example.PredictBom.Controllers;
 
+import com.example.PredictBom.BetRequest;
 import com.example.PredictBom.CreateMarketRequest;
 import com.example.PredictBom.Entities.PredictionMarket;
+import com.example.PredictBom.Entities.SalesOffer;
+import com.example.PredictBom.Models.BuyContractRequest;
+import com.example.PredictBom.Models.BuyContractResponse;
+import com.example.PredictBom.Models.MarketWithBetsPricesResponse;
 import com.example.PredictBom.Models.PredictionMarketResponse;
 import com.example.PredictBom.Services.PredictionMarketService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,9 +50,9 @@ public class MarketController {
 
     @PostMapping("/addBet")
     @PreAuthorize("hasRole('ROLE_MODERATOR')")
-    public ResponseEntity<?> addBet(@RequestParam int marketId, @RequestParam String chosenOption) {
+    public ResponseEntity<?> addBet(@RequestBody BetRequest betRequest) {
 
-        PredictionMarketResponse response = predictionMarketService.addBet(marketId, chosenOption);
+        MarketWithBetsPricesResponse response = predictionMarketService.addBet(betRequest.getMarketId(), betRequest.getYesPrice(), betRequest.getNoPrice(), betRequest.getChosenOption());
         if (response.getPredictionMarket() != null) {
             return ResponseEntity.ok(response);
         } else {
@@ -67,8 +72,14 @@ public class MarketController {
         }
 
     @GetMapping("/")
-    public ResponseEntity<?> getMarkets() {
-        return ResponseEntity.ok(predictionMarketService.getAllPredictionMarkets());
+    public ResponseEntity<?> getMarkets(@RequestParam String marketTitle, @RequestParam String[] marketCategory,String sortAttribute,String sortDirection,Pageable pageable) {
+        try {
+            List<PredictionMarket> predictionMarkets = new ArrayList<>(predictionMarketService.getPublicMarkets(marketTitle, marketCategory,sortAttribute,sortDirection));
+            return getResponseEntity(pageable, predictionMarkets);
+
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Błąd");
+        }
     }
 
     @GetMapping("/{id}")
@@ -138,6 +149,18 @@ public class MarketController {
         }
     }
 
+    @PreAuthorize("hasRole('ROLE_MODERATOR')")
+    @PutMapping("/makePublic")
+    public ResponseEntity<?> makeMarketPublic(@RequestParam int marketId) {
+        PredictionMarketResponse response = predictionMarketService.makeMarketPublic(marketId);
+
+        if(response.getPredictionMarket() != null) {
+            return ResponseEntity.ok(response);
+        }else{
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
     private ResponseEntity<?> getResponseEntity(Pageable pageable, List<PredictionMarket> predictionMarkets) {
         int start = (int) pageable.getOffset();
         int end = Math.min((start + pageable.getPageSize()), predictionMarkets.size());
@@ -146,10 +169,29 @@ public class MarketController {
         return ResponseEntity.ok(pages);
     }
 
-    @GetMapping("/offers")
-    public ResponseEntity<?> getOffers(@RequestParam int betId, @RequestParam boolean contractOption) {
-
-        return ResponseEntity.ok(predictionMarketService.buyContract(betId,contractOption,9000,60));
+    @PostMapping("/buyContract")
+    public ResponseEntity<?> buyContract(Principal principal, @RequestBody BuyContractRequest buyContractRequest) {
+            BuyContractResponse response = predictionMarketService.buyContract(principal.getName(),buyContractRequest.getBetId(),buyContractRequest.isContractOption(),buyContractRequest.getCountOfShares(),buyContractRequest.getMaxPrice());
+        if(response.getBoughtContract() == null) {
+            return ResponseEntity.badRequest().body(response);
+        }else{
+            return ResponseEntity.ok(response);
+        }
     }
 
+    @GetMapping("/betPrice/{id}")
+    public ResponseEntity<?> getBetPrice(@PathVariable int id) {
+        return ResponseEntity.ok(predictionMarketService.getPrice(id));
+    }
+
+    @PutMapping("/solveMarket")
+    public ResponseEntity<?> solveMarket(@RequestParam int marketId, @RequestParam int betId) {
+        PredictionMarketResponse response = predictionMarketService.solveMarket(marketId,betId);
+
+        if(response.getPredictionMarket() == null) {
+            return ResponseEntity.badRequest().body(response);
+        }else{
+            return ResponseEntity.ok(response);
+        }
+    }
 }

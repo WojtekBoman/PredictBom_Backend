@@ -1,20 +1,18 @@
 package com.example.PredictBom.Models;
 
+import com.example.PredictBom.Entities.Contract;
 import com.example.PredictBom.Entities.PredictionMarket;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
+
 @Getter
 @Setter
 @Builder
-public class PredictionMarketResponse {
-
+public class MarketWithBetsPricesResponse {
     private String info;
     private PredictionMarket predictionMarket;
-
-    public PredictionMarketResponse(String info, PredictionMarket predictionMarket) {
-        this.info = info;
-        this.predictionMarket = predictionMarket;
-    }
+    private BetPrice betPrice;
 }
