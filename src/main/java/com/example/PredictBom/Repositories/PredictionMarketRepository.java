@@ -16,10 +16,13 @@ public interface PredictionMarketRepository extends MongoRepository<PredictionMa
 
     List<PredictionMarket> findByPublishedFalse(String author, Sort sort);
 
+    List<PredictionMarket> findByPublishedTrueAndAuthor(String author,Sort sort);
+
     Optional<PredictionMarket> findByMarketId(Integer marketId);
 
     Optional<PredictionMarket> findByTopic(String topic);
 
     List<PredictionMarket> findByPublishedTrue(Sort sort);
+
 
 }

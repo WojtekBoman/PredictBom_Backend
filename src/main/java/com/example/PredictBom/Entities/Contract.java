@@ -7,6 +7,8 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.stream.Collectors;
 
@@ -18,12 +20,15 @@ public class Contract {
 
     @Id
     private int id;
-    private int betId;
+//    private int betId;
+    private Bet bet;
+    private PredictionMarket predictionMarket;
     private String playerId;
     private boolean contractOption;
-    private double valueOfShares;
     private int countOfContracts;
     private HashSet<SalesOffer> offers;
+    @Builder.Default
+    private String modifiedDate = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss").format(new Date());
 
 
     public void addOffer(SalesOffer offer){

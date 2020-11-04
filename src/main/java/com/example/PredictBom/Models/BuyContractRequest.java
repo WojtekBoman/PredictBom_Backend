@@ -10,6 +10,7 @@ import lombok.Setter;
 public class BuyContractRequest {
 
     private int maxPrice;
+    private int marketId;
     private int countOfShares;
     private int betId;
     private boolean contractOption;

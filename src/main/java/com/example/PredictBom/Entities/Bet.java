@@ -21,24 +21,21 @@ public class Bet {
     private int id;
     private int marketId;
     private String chosenOption;
-    private double bestYesPrice;
-    private double bestNoPrice;
-    private List<Price> historyOfPricesYesContracts;
-    private List<Price> historyOfPricesNoContracts;
 
-    public void addPriceYesContract(Price price) {
-        if(historyOfPricesYesContracts == null) {
-            this.historyOfPricesYesContracts = new ArrayList<Price>();
-        }
-        historyOfPricesYesContracts.add(price);
-    }
-
-    public void addPriceNoContract(Price price) {
-        if(historyOfPricesNoContracts == null) {
-            this.historyOfPricesNoContracts = new ArrayList<Price>();
-        }
-        historyOfPricesNoContracts.add(price);
-    }
+//
+//    public void addPriceYesContract(Price price) {
+//        if(historyOfPricesYesContracts == null) {
+//            this.historyOfPricesYesContracts = new ArrayList<Price>();
+//        }
+//        historyOfPricesYesContracts.add(price);
+//    }
+//
+//    public void addPriceNoContract(Price price) {
+//        if(historyOfPricesNoContracts == null) {
+//            this.historyOfPricesNoContracts = new ArrayList<Price>();
+//        }
+//        historyOfPricesNoContracts.add(price);
+//    }
 
     @Override
     public boolean equals(Object o) {
