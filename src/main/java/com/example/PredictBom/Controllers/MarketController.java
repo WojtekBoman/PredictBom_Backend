@@ -150,6 +150,19 @@ public class MarketController {
     }
 
     @PreAuthorize("hasRole('ROLE_MODERATOR')")
+    @GetMapping("/public")
+    public ResponseEntity<?> getPublicModMarkets(Principal principal, @RequestParam String marketTitle, @RequestParam String[] marketCategory,String sortAttribute,String sortDirection,Pageable pageable) {
+
+        try {
+            List<PredictionMarket> predictionMarkets = new ArrayList<>(predictionMarketService.getPublicModMarkets(principal.getName(), marketTitle, marketCategory,sortAttribute,sortDirection));
+            return getResponseEntity(pageable, predictionMarkets);
+
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Błąd");
+        }
+    }
+
+    @PreAuthorize("hasRole('ROLE_MODERATOR')")
     @PutMapping("/makePublic")
     public ResponseEntity<?> makeMarketPublic(@RequestParam int marketId) {
         PredictionMarketResponse response = predictionMarketService.makeMarketPublic(marketId);
@@ -171,7 +184,7 @@ public class MarketController {
 
     @PostMapping("/buyContract")
     public ResponseEntity<?> buyContract(Principal principal, @RequestBody BuyContractRequest buyContractRequest) {
-            BuyContractResponse response = predictionMarketService.buyContract(principal.getName(),buyContractRequest.getBetId(),buyContractRequest.isContractOption(),buyContractRequest.getCountOfShares(),buyContractRequest.getMaxPrice());
+            BuyContractResponse response = predictionMarketService.buyContract(principal.getName(),buyContractRequest.getBetId(),buyContractRequest.getMarketId(),buyContractRequest.isContractOption(),buyContractRequest.getCountOfShares(),buyContractRequest.getMaxPrice());
         if(response.getBoughtContract() == null) {
             return ResponseEntity.badRequest().body(response);
         }else{
@@ -184,9 +197,20 @@ public class MarketController {
         return ResponseEntity.ok(predictionMarketService.getPrice(id));
     }
 
-    @PutMapping("/solveMarket")
-    public ResponseEntity<?> solveMarket(@RequestParam int marketId, @RequestParam int betId) {
-        PredictionMarketResponse response = predictionMarketService.solveMarket(marketId,betId);
+    @PutMapping("/solveMultiBetMarket")
+    public ResponseEntity<?> solveMultiBetMarket(@RequestParam int marketId, @RequestParam int betId) {
+        PredictionMarketResponse response = predictionMarketService.solveMultiBetMarket(marketId,betId);
+
+        if(response.getPredictionMarket() == null) {
+            return ResponseEntity.badRequest().body(response);
+        }else{
+            return ResponseEntity.ok(response);
+        }
+    }
+
+    @PutMapping("/solveSingleBetMarket")
+    public ResponseEntity<?> solveSingleBetMarket(@RequestParam int marketId, @RequestParam int betId,@RequestParam boolean correctOption) {
+        PredictionMarketResponse response = predictionMarketService.solveSingleBetMarket(marketId,betId,correctOption);
 
         if(response.getPredictionMarket() == null) {
             return ResponseEntity.badRequest().body(response);

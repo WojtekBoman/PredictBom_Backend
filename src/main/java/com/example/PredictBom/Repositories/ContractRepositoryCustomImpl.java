@@ -9,6 +9,8 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
+import java.util.List;
+
 public class ContractRepositoryCustomImpl implements ContractRepositoryCustom {
     @Autowired
     private MongoTemplate mongoTemplate;
@@ -19,6 +21,8 @@ public class ContractRepositoryCustomImpl implements ContractRepositoryCustom {
         Update update = new Update();
         update.set("offers",contract.getOffers());
         update.set("countOfContracts",contract.getCountOfContracts());
+        update.set("modifiedDate",contract.getModifiedDate());
+        update.set("predictionMarket",contract.getPredictionMarket());
         UpdateResult result = mongoTemplate.updateFirst(query, update, Contract.class);
         return result.getModifiedCount()>0;
     }

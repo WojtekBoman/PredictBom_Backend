@@ -1,12 +1,15 @@
 package com.example.PredictBom.Controllers;
 
+import java.security.Principal;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
 
 import com.example.PredictBom.ChangePasswordWithTokenRequest;
 import com.example.PredictBom.Entities.*;
+import com.example.PredictBom.Models.EditPasswordRequest;
 import com.example.PredictBom.Payload.Request.LoginRequest;
 import com.example.PredictBom.Payload.Request.SignupRequest;
 import com.example.PredictBom.Payload.Response.JwtResponse;
@@ -30,6 +33,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -38,6 +42,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import javax.xml.bind.DatatypeConverter;
 
+import static com.example.PredictBom.Services.UserService.*;
 import static javax.crypto.Cipher.SECRET_KEY;
 
 
@@ -78,7 +83,7 @@ public class AuthController {
 
 
     @PostMapping("/signin")
-    public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) throws ParseException {
 
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
@@ -88,10 +93,30 @@ public class AuthController {
 
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         List<String> roles = userDetails.getAuthorities().stream()
-                .map(item -> item.getAuthority())
+                .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
 
-
+        if(roles.get(0).equals("ROLE_PLAYER")) {
+            Player player = playerRepository.findByUsername(userDetails.getUsername());
+            String[] lastLoginDate = player.getLastLoginDate().split("-");
+            String[] date = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss").format(new Date()).split("-");
+            System.out.println(date[2]);
+            System.out.println(lastLoginDate[2]);
+            System.out.println("______________");
+            if(!lastLoginDate[0].equals(date[0])) {
+                System.out.println("Dzien dobry 1");
+                player.setBudget(player.getBudget() + 100);
+                playerRepository.update(player);
+            }else if(!lastLoginDate[1].equals(date[1])){
+                System.out.println("Dzien dobry 2");
+                player.setBudget(player.getBudget() + 100);
+                playerRepository.update(player);
+            }else if(!lastLoginDate[2].substring(0,4).equals(date[2].substring(0,4))) {
+                System.out.println("Dzien dobry 3");
+                player.setBudget(player.getBudget() + 100);
+                playerRepository.update(player);
+            }
+        }
 
         return ResponseEntity.ok(new JwtResponse(jwt,
                 userDetails.getUsername(),
@@ -104,13 +129,13 @@ public class AuthController {
         if (userRepository.existsByUsername(signUpRequest.getUsername())) {
             return ResponseEntity
                     .badRequest()
-                    .body(new MessageResponse("Error: Username is already taken!"));
+                    .body(new MessageResponse("Ta nazwa użytkownika jest już zajęta!"));
         }
 
         if (userRepository.existsByEmail(signUpRequest.getEmail())) {
             return ResponseEntity
                     .badRequest()
-                    .body(new MessageResponse("Error: Email is already in use!"));
+                    .body(new MessageResponse("Użytkownik o tym mailu już istnieje"));
         }
 
         // Create new user's account
@@ -128,7 +153,7 @@ public class AuthController {
 
             Player player = new Player(signUpRequest.getUsername(), signUpRequest.getFirstName(), signUpRequest.getSurname(),
                     signUpRequest.getEmail(),
-                    encoder.encode(signUpRequest.getPassword()), 0, 0, 0);
+                    encoder.encode(signUpRequest.getPassword()), 1000, 0, 0);
 
             player.setRoles(roles);
 
@@ -241,5 +266,28 @@ public class AuthController {
                 return ResponseEntity.badRequest().body("Wystąpił błąd");
     }
 }
+
+    @PutMapping("/user/editPassword")
+    public ResponseEntity editPassword(Principal principal, @RequestBody EditPasswordRequest editPasswordRequest) {
+        int changed = userService.editPassword(principal.getName(), editPasswordRequest.getOldPassword(), editPasswordRequest.getNewPassword(), editPasswordRequest.getNewPassword());
+
+        switch (changed) {
+            case STATUS_OK:
+                return ResponseEntity.ok("Hasło zostało zmienione. Zaloguj się przy pomocy nowego hasła !");
+            case USER_NOT_FOUND:
+                return ResponseEntity.badRequest()
+                        .body("Nie udało się zmienić hasła- nie znaleziono użytkownika.");
+            case INCORRECT_PASSWORD:
+                return ResponseEntity.badRequest()
+                        .body("Nie udało się zmienić hasła - niepoprawne hasło.");
+            case PASSWORDS_NOT_EQUALS:
+                return ResponseEntity.badRequest()
+                        .body("Nie udało się zmienić hasła - hasła nie są identyczne.");
+            default:
+                return ResponseEntity.badRequest()
+                        .body("Nie udało się zmienić hasła.");
+        }
+
+    }
 
 }

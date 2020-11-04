@@ -14,7 +14,7 @@ import java.util.Set;
 
 @Getter
 @Setter
-@Builder
+@Builder(toBuilder = true)
 @Document(collection = "markets")
 public class PredictionMarket {
 
@@ -34,17 +34,12 @@ public class PredictionMarket {
     private String predictedEndDate;
     private String description;
     private String author;
-    @Builder.Default
-    private boolean solved = false;
+    private boolean correctBetOption;
     @Builder.Default
     private boolean published = false;
     private Binary marketCover;
 
 
-    public void solveMarket(int correctBetId) {
-        this.correctBetId = correctBetId;
-        this.solved = true;
-    }
 
     public void addBet(Bet bet){
         if(bets == null){

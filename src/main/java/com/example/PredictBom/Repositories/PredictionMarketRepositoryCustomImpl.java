@@ -23,6 +23,8 @@ public class PredictionMarketRepositoryCustomImpl implements PredictionMarketRep
         update.set("topic",predictionMarket.getTopic());
         update.set("predictedDateEnd",predictionMarket.getPredictedEndDate());
         update.set("published",predictionMarket.isPublished());
+        update.set("correctBetId",predictionMarket.getCorrectBetId());
+        update.set("correctBetOption",predictionMarket.isCorrectBetOption());
         UpdateResult result = mongoTemplate.updateFirst(query, update, PredictionMarket.class);
         return result.getModifiedCount()>0;
     }
