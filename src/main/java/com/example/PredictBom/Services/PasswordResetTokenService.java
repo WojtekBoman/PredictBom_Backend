@@ -17,6 +17,4 @@ public class PasswordResetTokenService {
     @Autowired
     PasswordResetTokenRepository passwordResetTokenRepository;
 
-
-
 }

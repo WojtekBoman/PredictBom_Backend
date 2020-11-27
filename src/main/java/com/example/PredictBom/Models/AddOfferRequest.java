@@ -7,8 +7,8 @@ import lombok.Setter;
 @Getter
 @Setter
 @Builder
-public class PlayerResponse {
-    private double budget;
-    private int points;
-    private int rankingPosition;
+public class AddOfferRequest {
+    private int contractId;
+    private int countOfShares;
+    private double sellPrice;
 }

@@ -22,7 +22,8 @@ public class ContractRepositoryCustomImpl implements ContractRepositoryCustom {
         update.set("offers",contract.getOffers());
         update.set("countOfContracts",contract.getCountOfContracts());
         update.set("modifiedDate",contract.getModifiedDate());
-        update.set("predictionMarket",contract.getPredictionMarket());
+        update.set("marketInfo",contract.getMarketInfo());
+        update.set("contractStatus",contract.getContractStatus());
         UpdateResult result = mongoTemplate.updateFirst(query, update, Contract.class);
         return result.getModifiedCount()>0;
     }

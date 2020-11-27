@@ -9,7 +9,7 @@ import lombok.Setter;
 @Builder
 public class BuyContractRequest {
 
-    private int maxPrice;
+    private double maxPrice;
     private int marketId;
     private int countOfShares;
     private int betId;

@@ -19,7 +19,10 @@ public class PlayerRepositoryCustomImpl implements PlayerRepositoryCustom {
         Query query = new Query(Criteria.where("_id").is(player.getUsername()));
         Update update = new Update();
         update.set("budget",player.getBudget());
+        update.set("lastLoginDate",player.getLastLoginDate());
         UpdateResult result = mongoTemplate.updateFirst(query, update, Player.class);
         return result.getModifiedCount()>0;
     }
+
+
 }

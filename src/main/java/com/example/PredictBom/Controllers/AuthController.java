@@ -99,21 +99,20 @@ public class AuthController {
         if(roles.get(0).equals("ROLE_PLAYER")) {
             Player player = playerRepository.findByUsername(userDetails.getUsername());
             String[] lastLoginDate = player.getLastLoginDate().split("-");
-            String[] date = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss").format(new Date()).split("-");
-            System.out.println(date[2]);
-            System.out.println(lastLoginDate[2]);
-            System.out.println("______________");
-            if(!lastLoginDate[0].equals(date[0])) {
-                System.out.println("Dzien dobry 1");
+            String date = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss").format(new Date());
+            String[] dateSplit = date.split("-");
+
+            if(!lastLoginDate[0].equals(dateSplit[0])) {
                 player.setBudget(player.getBudget() + 100);
+                player.setLastLoginDate(date);
                 playerRepository.update(player);
-            }else if(!lastLoginDate[1].equals(date[1])){
-                System.out.println("Dzien dobry 2");
+            }else if(!lastLoginDate[1].equals(dateSplit[1])){
                 player.setBudget(player.getBudget() + 100);
+                player.setLastLoginDate(date);
                 playerRepository.update(player);
-            }else if(!lastLoginDate[2].substring(0,4).equals(date[2].substring(0,4))) {
-                System.out.println("Dzien dobry 3");
+            }else if(!lastLoginDate[2].substring(0,4).equals(dateSplit[2].substring(0,4))) {
                 player.setBudget(player.getBudget() + 100);
+                player.setLastLoginDate(date);
                 playerRepository.update(player);
             }
         }
@@ -153,12 +152,12 @@ public class AuthController {
 
             Player player = new Player(signUpRequest.getUsername(), signUpRequest.getFirstName(), signUpRequest.getSurname(),
                     signUpRequest.getEmail(),
-                    encoder.encode(signUpRequest.getPassword()), 1000, 0, 0);
+                    encoder.encode(signUpRequest.getPassword()), 1000);
 
             player.setRoles(roles);
 
             playerRepository.save(player);
-
+            return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
 //            Role modRole = roleRepository.findByName(ERole.ROLE_MODERATOR)
 //                    .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
 //            roles.add(modRole);
@@ -199,11 +198,12 @@ public class AuthController {
 
                         Player player = new Player(signUpRequest.getUsername(), signUpRequest.getFirstName(), signUpRequest.getSurname(),
                                 signUpRequest.getEmail(),
-                                encoder.encode(signUpRequest.getPassword()), 1000, 0, 0);
+                                encoder.encode(signUpRequest.getPassword()), 1000);
 
                         player.setRoles(roles);
 
                         playerRepository.save(player);
+
                 }
             });
         }

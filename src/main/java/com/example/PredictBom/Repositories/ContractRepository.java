@@ -11,7 +11,8 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ContractRepository extends MongoRepository<Contract,String>, ContractRepositoryCustom {
-    Contract findById(int id);
+    Optional<Contract> findById(int id);
+    Contract deleteById(int id);
     List<Contract> deleteByBetId(int id);
     @Query("{'predictionMarket.marketId': ?0}")
     List<Contract> findAllByMarketId(int id);
@@ -27,6 +28,9 @@ public interface ContractRepository extends MongoRepository<Contract,String>, Co
     Optional<Contract> findByPlayerIdAndBetIdAndContractOption(String playerId,int betId, boolean contractOption);
     @Query("{'bet.id': ?0,'contractOption': ?1}")
     Contract findByBetIdAndContractOption(int betId, boolean contractOption);
-    @Query("{'playerId': ?0, 'predictionMarket.correctBetId' : {$lt : 1}}")
+    @Query("{'playerId': ?0}")
     List<Contract> findNotSolvedMarketsByPlayerId(String playerId,Sort sort);
+    List<Contract> deleteAllByPlayerIdIsNull();
+    @Query("{'bet.id': ?0,'contractOption': ?1,'playerId' : {$ne : ?2},'offers' : {$ne : null}}")
+    List<Contract> findOffersToBuy(int betId, boolean contractOption, String username);
 }
