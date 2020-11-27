@@ -26,8 +26,6 @@ public class PredictionMarket {
     private Set<Bet> bets;
     private int correctBetId;
     private MarketCategory category;
-//    @Builder.Default
-//    private String createdDate = new SimpleDateFormat("dd/MM/yyyy").format(new Date());
     @Builder.Default
     private String createdDate = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss").format(new Date());
     @Builder.Default

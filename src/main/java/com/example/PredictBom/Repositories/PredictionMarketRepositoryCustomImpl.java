@@ -25,6 +25,7 @@ public class PredictionMarketRepositoryCustomImpl implements PredictionMarketRep
         update.set("published",predictionMarket.isPublished());
         update.set("correctBetId",predictionMarket.getCorrectBetId());
         update.set("correctBetOption",predictionMarket.isCorrectBetOption());
+        update.set("category",predictionMarket.getCategory());
         UpdateResult result = mongoTemplate.updateFirst(query, update, PredictionMarket.class);
         return result.getModifiedCount()>0;
     }

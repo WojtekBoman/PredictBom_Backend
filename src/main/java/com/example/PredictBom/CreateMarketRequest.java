@@ -12,19 +12,20 @@ import javax.validation.constraints.Size;
 
 @Getter
 @Setter
+@Builder
 public class CreateMarketRequest {
 
     @NotBlank
     @Size(min = 3)
-    private String marketTitle;
+    private String topic;
 
     @NotBlank
     @Size(max = 50)
     @Email
-    private String marketCategory;
+    private String category;
 
     @Size(min = 3, max = 40)
-    private String predictedDateEnd = "3000-01-01";
+    private String predictedEndDate = "3000-01-01";
 
     @NotBlank
     private String description;

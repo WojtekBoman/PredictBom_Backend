@@ -22,7 +22,8 @@ public class Transaction {
     private boolean option;
     private int countOfShares;
     private double price;
-    private int betId;
+    private Bet bet;
+    private MarketInfo marketInfo;
     private String dealer;
     private String purchaser;
 }

@@ -15,6 +15,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -39,8 +40,8 @@ public class MarketController {
     public ResponseEntity<?> createPredictionMarket(Principal principal, @RequestBody CreateMarketRequest createMarketRequest) throws IOException {
 //        CreatePredictionMarketResponse response = predictionMarketService.createPredictionMarket(principal.getName(),createMarketRequest.getMarketTitle(),createMarketRequest.getMarketCategory(),createMarketRequest.getPredictedDateEnd(),createMarketRequest.getMarketCover());
 
-        PredictionMarketResponse response = predictionMarketService.createPredictionMarket(principal.getName(), createMarketRequest.getMarketTitle(), createMarketRequest.getMarketCategory(), createMarketRequest.getPredictedDateEnd(), createMarketRequest.getDescription());
-
+        PredictionMarketResponse response = predictionMarketService.createPredictionMarket(principal.getName(),createMarketRequest.getTopic(), createMarketRequest.getCategory(), createMarketRequest.getPredictedEndDate(), createMarketRequest.getDescription());
+        System.out.println(response);
         if (response.getPredictionMarket() != null) {
             return ResponseEntity.ok(response);
         } else {
@@ -48,11 +49,24 @@ public class MarketController {
         }
     }
 
+//    @PostMapping("/new")
+////    @PreAuthorize("hasRole('ROLE_MODERATOR')")
+//    public ResponseEntity<?> createPredictionMarket(Principal principal, @RequestParam String marketTitle, @RequestParam String marketCategory, @RequestParam String predictedDateEnd, @RequestParam String description) throws IOException {
+////        CreatePredictionMarketResponse response = predictionMarketService.createPredictionMarket(principal.getName(),createMarketRequest.getMarketTitle(),createMarketRequest.getMarketCategory(),createMarketRequest.getPredictedDateEnd(),createMarketRequest.getMarketCover());
+//
+//        PredictionMarketResponse response = predictionMarketService.createPredictionMarket(principal.getName(), marketTitle, marketCategory, predictedDateEnd, description);
+//        if (response.getPredictionMarket() != null) {
+//            return ResponseEntity.ok(response);
+//        } else {
+//            return ResponseEntity.badRequest().body(response);
+//        }
+//    }
+
     @PostMapping("/addBet")
     @PreAuthorize("hasRole('ROLE_MODERATOR')")
     public ResponseEntity<?> addBet(@RequestBody BetRequest betRequest) {
 
-        MarketWithBetsPricesResponse response = predictionMarketService.addBet(betRequest.getMarketId(), betRequest.getYesPrice(), betRequest.getNoPrice(), betRequest.getChosenOption());
+        MarketWithBetsPricesResponse response = predictionMarketService.addBet(betRequest);
         if (response.getPredictionMarket() != null) {
             return ResponseEntity.ok(response);
         } else {
@@ -62,8 +76,8 @@ public class MarketController {
 
     @PostMapping("/deleteBet")
     @PreAuthorize("hasRole('ROLE_MODERATOR')")
-    public ResponseEntity<?> removeBet(@RequestParam int marketId, @RequestParam int betId){
-        PredictionMarketResponse response = predictionMarketService.deleteBet(marketId, betId);
+    public ResponseEntity<?> removeBet(@RequestParam int betId){
+        PredictionMarketResponse response = predictionMarketService.deleteBet(betId);
         if (response.getPredictionMarket() != null) {
             return ResponseEntity.ok(response);
         } else {
@@ -71,10 +85,26 @@ public class MarketController {
         }
         }
 
+//    @GetMapping("/")
+//    public ResponseEntity<?> getAllMarkets() {
+//        return ResponseEntity.ok(predictionMarketService.getAllPredictionMarkets());
+//    }
+
     @GetMapping("/")
     public ResponseEntity<?> getMarkets(@RequestParam String marketTitle, @RequestParam String[] marketCategory,String sortAttribute,String sortDirection,Pageable pageable) {
         try {
             List<PredictionMarket> predictionMarkets = new ArrayList<>(predictionMarketService.getPublicMarkets(marketTitle, marketCategory,sortAttribute,sortDirection));
+            return getResponseEntity(pageable, predictionMarkets);
+
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Błąd");
+        }
+    }
+
+    @GetMapping("/solved")
+    public ResponseEntity<?> getSolvedMarkets(@RequestParam String marketTitle, @RequestParam String[] marketCategory,String sortAttribute,String sortDirection,Pageable pageable) {
+        try {
+            List<PredictionMarket> predictionMarkets = new ArrayList<>(predictionMarketService.getSolvedMarkets(marketTitle, marketCategory,sortAttribute,sortDirection));
             return getResponseEntity(pageable, predictionMarkets);
 
         } catch (Exception e) {
@@ -95,7 +125,7 @@ public class MarketController {
 
     @PutMapping("/edit/{id}")
     public ResponseEntity<?> editMarketById(@PathVariable("id") int marketId, @RequestBody CreateMarketRequest editRequest) {
-        PredictionMarketResponse response = predictionMarketService.editMarket(marketId,editRequest.getMarketTitle(),editRequest.getPredictedDateEnd(),editRequest.getDescription());
+        PredictionMarketResponse response = predictionMarketService.editMarket(marketId,editRequest.getTopic(),editRequest.getCategory(),editRequest.getPredictedEndDate(),editRequest.getDescription());
 
         if(response.getPredictionMarket() != null) {
             return ResponseEntity.ok(response);
