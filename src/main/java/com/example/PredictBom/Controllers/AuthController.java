@@ -20,6 +20,7 @@ import com.example.PredictBom.Repositories.RoleRepository;
 import com.example.PredictBom.Repositories.UserRepository;
 import com.example.PredictBom.Security.JWT.JwtUtils;
 import com.example.PredictBom.Security.Services.UserDetailsImpl;
+import com.example.PredictBom.Services.AuthService;
 import com.example.PredictBom.Services.PasswordResetTokenService;
 import com.example.PredictBom.Services.UserService;
 import io.jsonwebtoken.Claims;
@@ -50,6 +51,9 @@ import static javax.crypto.Cipher.SECRET_KEY;
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
+
+    @Autowired
+    AuthService authService;
 
     @Autowired
     AuthenticationManager authenticationManager;
@@ -85,133 +89,12 @@ public class AuthController {
     @PostMapping("/signin")
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) throws ParseException {
 
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
-
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        String jwt = jwtUtils.generateJwtToken(authentication);
-
-        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        List<String> roles = userDetails.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.toList());
-
-        if(roles.get(0).equals("ROLE_PLAYER")) {
-            Player player = playerRepository.findByUsername(userDetails.getUsername());
-            String[] lastLoginDate = player.getLastLoginDate().split("-");
-            String date = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss").format(new Date());
-            String[] dateSplit = date.split("-");
-
-            if(!lastLoginDate[0].equals(dateSplit[0])) {
-                player.setBudget(player.getBudget() + 100);
-                player.setLastLoginDate(date);
-                playerRepository.update(player);
-            }else if(!lastLoginDate[1].equals(dateSplit[1])){
-                player.setBudget(player.getBudget() + 100);
-                player.setLastLoginDate(date);
-                playerRepository.update(player);
-            }else if(!lastLoginDate[2].substring(0,4).equals(dateSplit[2].substring(0,4))) {
-                player.setBudget(player.getBudget() + 100);
-                player.setLastLoginDate(date);
-                playerRepository.update(player);
-            }
-        }
-
-        return ResponseEntity.ok(new JwtResponse(jwt,
-                userDetails.getUsername(),
-                userDetails.getEmail(), userDetails.getFirstName(), userDetails.getSurname(),
-                roles));
+        return ResponseEntity.ok(authService.signIn(loginRequest));
     }
 
     @PostMapping("/signup")
     public ResponseEntity<?> registerUser(@Valid @RequestBody SignupRequest signUpRequest) {
-        if (userRepository.existsByUsername(signUpRequest.getUsername())) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(new MessageResponse("Ta nazwa użytkownika jest już zajęta!"));
-        }
-
-        if (userRepository.existsByEmail(signUpRequest.getEmail())) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(new MessageResponse("Użytkownik o tym mailu już istnieje"));
-        }
-
-        // Create new user's account
-        User user = new User(signUpRequest.getUsername(), signUpRequest.getFirstName(), signUpRequest.getSurname(),
-                signUpRequest.getEmail(),
-                encoder.encode(signUpRequest.getPassword()));
-
-        Set<String> strRoles = signUpRequest.getRoles();
-        Set<Role> roles = new HashSet<>();
-
-        if (strRoles == null) {
-            Role userRole = roleRepository.findByName(ERole.ROLE_PLAYER)
-                    .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-            roles.add(userRole);
-
-            Player player = new Player(signUpRequest.getUsername(), signUpRequest.getFirstName(), signUpRequest.getSurname(),
-                    signUpRequest.getEmail(),
-                    encoder.encode(signUpRequest.getPassword()), 1000);
-
-            player.setRoles(roles);
-
-            playerRepository.save(player);
-            return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
-//            Role modRole = roleRepository.findByName(ERole.ROLE_MODERATOR)
-//                    .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-//            roles.add(modRole);
-//
-//            Moderator moderator = new Moderator(signUpRequest.getUsername(), signUpRequest.getFirstName(), signUpRequest.getSurname(),
-//                    signUpRequest.getEmail(),
-//                    encoder.encode(signUpRequest.getPassword()));
-//
-//            moderator.setRoles(roles);
-//            moderatorRepository.save(moderator);
-        } else {
-            strRoles.forEach(role -> {
-                switch (role) {
-                    case "admin":
-                        Role adminRole = roleRepository.findByName(ERole.ROLE_ADMIN)
-                                .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-                        roles.add(adminRole);
-
-                        break;
-                    case "mod":
-                        Role modRole = roleRepository.findByName(ERole.ROLE_MODERATOR)
-                                .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-                        roles.add(modRole);
-
-                        Moderator moderator = new Moderator(signUpRequest.getUsername(), signUpRequest.getFirstName(), signUpRequest.getSurname(),
-                                signUpRequest.getEmail(),
-                                encoder.encode(signUpRequest.getPassword()));
-
-                        moderator.setRoles(roles);
-                        moderatorRepository.save(moderator);
-
-
-                        break;
-                    default:
-                        Role userRole = roleRepository.findByName(ERole.ROLE_PLAYER)
-                                .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-                        roles.add(userRole);
-
-                        Player player = new Player(signUpRequest.getUsername(), signUpRequest.getFirstName(), signUpRequest.getSurname(),
-                                signUpRequest.getEmail(),
-                                encoder.encode(signUpRequest.getPassword()), 1000);
-
-                        player.setRoles(roles);
-
-                        playerRepository.save(player);
-
-                }
-            });
-        }
-
-        user.setRoles(roles);
-        userRepository.save(user);
-
-        return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
+       return authService.signUp(signUpRequest);
     }
 
     @PostMapping("/user/resetPassword")
@@ -269,7 +152,7 @@ public class AuthController {
 
     @PutMapping("/user/editPassword")
     public ResponseEntity editPassword(Principal principal, @RequestBody EditPasswordRequest editPasswordRequest) {
-        int changed = userService.editPassword(principal.getName(), editPasswordRequest.getOldPassword(), editPasswordRequest.getNewPassword(), editPasswordRequest.getNewPassword());
+        int changed = userService.editPassword(principal.getName(), editPasswordRequest.getOldPassword(), editPasswordRequest.getNewPassword(), editPasswordRequest.getRepeatedNewPassword());
 
         switch (changed) {
             case STATUS_OK:

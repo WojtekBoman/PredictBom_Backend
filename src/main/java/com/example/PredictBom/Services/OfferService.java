@@ -44,7 +44,6 @@ public class OfferService {
     TransactionRepository transactionRepository;
 
 //    backoff = @Backoff(delay = 10), maxAttempts = 10
-
     @Transactional(value = "transactionManager", propagation = Propagation.REQUIRED)
     @Retryable( value = MongoCommandException.class,
             maxAttempts = 2, backoff = @Backoff(delay = 100))
@@ -55,6 +54,8 @@ public class OfferService {
         Optional<SalesOffer> optOffer = salesOfferRepository.findById(offerId);
         if (!optOffer.isPresent()) return BuyContractResponse.builder().info("Wybrana oferta nie istnieje").build();
         SalesOffer offer = optOffer.get();
+        System.out.println("Budżet "+purchaser);
+        System.out.println("Cenka "+countOfShares * offer.getValueOfShares());
         if (purchaser.getBudget() < countOfShares * offer.getValueOfShares())
             return BuyContractResponse.builder().info("Masz za mało pieniędzy").build();
         if (countOfShares > offer.getCountOfContracts())
@@ -63,6 +64,7 @@ public class OfferService {
         Optional<Contract> optContract = contractRepository.findById(offer.getContractId());
         if (!optContract.isPresent()) return BuyContractResponse.builder().info("Wystąpił błąd").build();
         Contract contract = optContract.get();
+        if(contract.getPlayerId() != null && contract.getPlayerId().equals(username)) return BuyContractResponse.builder().info("Nie możesz kupować własnych akcji !").build();
         Player player = playerRepository.findByUsername(contract.getPlayerId());
         if (player != null) {
             player.setBudget(player.getBudget() + countOfShares * offer.getValueOfShares());

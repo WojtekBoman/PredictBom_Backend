@@ -21,7 +21,7 @@ public class PredictionMarketRepositoryCustomImpl implements PredictionMarketRep
         update.set("marketCover",predictionMarket.getMarketCover());
         update.set("description",predictionMarket.getDescription());
         update.set("topic",predictionMarket.getTopic());
-        update.set("predictedDateEnd",predictionMarket.getPredictedEndDate());
+        update.set("predictedEndDate",predictionMarket.getPredictedEndDate());
         update.set("published",predictionMarket.isPublished());
         update.set("correctBetId",predictionMarket.getCorrectBetId());
         update.set("correctBetOption",predictionMarket.isCorrectBetOption());

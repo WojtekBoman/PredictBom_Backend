@@ -3,6 +3,7 @@ package com.example.PredictBom.Services;
 import com.example.PredictBom.Entities.*;
 import com.example.PredictBom.Models.AddOfferRequest;
 import com.example.PredictBom.Models.ContractDetailsResponse;
+import com.example.PredictBom.Models.ContractResponse;
 import com.example.PredictBom.Models.OffersToBuyResponse;
 import com.example.PredictBom.Repositories.BetRepository;
 import com.example.PredictBom.Repositories.ContractRepository;
@@ -42,13 +43,13 @@ public class ContractService {
 //    }
 
     @Transactional
-    public Contract addOffer(String username, AddOfferRequest addOfferRequest) {
+    public ContractResponse addOffer(String username, AddOfferRequest addOfferRequest) {
 
         Optional<Contract> optContract = contractRepository.findById(addOfferRequest.getContractId());
-        if(!optContract.isPresent()) return null;
+        if(!optContract.isPresent()) return ContractResponse.builder().info("Nie znaleziono tego kontraktu").build();
         Contract contract = optContract.get();
-        if(addOfferRequest.getCountOfShares() > contract.getCountOfContracts()) return null;
-        if(!contract.getPlayerId().equals(username)) return null;
+        if(addOfferRequest.getCountOfShares() > contract.getCountOfContracts()) return ContractResponse.builder().info("Nie masz wystarczająco akcji aby dodać tę ofertę").build();
+        if(!contract.getPlayerId().equals(username)) return ContractResponse.builder().info("Nie jesteś właścicielem tego kontraktu").build();
         SalesOffer salesOffer = SalesOffer.builder().id(counterService.getNextId("offers")).contractId(addOfferRequest.getContractId()).countOfContracts(addOfferRequest.getCountOfShares()).valueOfShares(addOfferRequest.getSellPrice()).build();
         contract.addOffer(salesOffer);
         contract.setCountOfContracts(contract.getCountOfContracts() - addOfferRequest.getCountOfShares());
@@ -56,17 +57,14 @@ public class ContractService {
         salesOfferRepository.save(salesOffer);
 
 
-        return contract;
+        return ContractResponse.builder().info("Dodano nową ofertę").contract(contract).build();
     }
 
-    public List<OffersToBuyResponse> getOffers(String username, int betId, boolean chosenOption) {
+    public List<OffersToBuyResponse> getOffers(int betId, boolean chosenOption) {
 
 
-//        List<SalesOffer> offers = contractRepository.findOffersToBuy(betId,chosenOption,username).stream().map(contract -> new ArrayList<>(contract.getOffers())).collect(Collectors.toList()).stream().flatMap(List::stream)
-//                .collect(Collectors.toList());
-//
-//
-        List<Contract> contracts = contractRepository.findOffersToBuy(betId,chosenOption,username);
+
+        List<Contract> contracts = contractRepository.findOffersToBuy(betId,chosenOption);
         List<OffersToBuyResponse> offers = new ArrayList<>();
         contracts.forEach(contract -> contract.getOffers().forEach(salesOffer -> offers.add(OffersToBuyResponse.builder().dealer(contract.getPlayerId()).contractId(salesOffer.getContractId()).countOfContracts(salesOffer.getCountOfContracts()).valueOfShares(salesOffer.getValueOfShares()).createdDate(salesOffer.getCreatedDate()).id(salesOffer.getId()).build())));
         Collections.sort(offers, new Comparator<OffersToBuyResponse>() {
@@ -82,22 +80,22 @@ public class ContractService {
 
 
 
-    public Contract deleteOffer(String username,int offerId) {
+    public ContractResponse deleteOffer(String username, int offerId) {
 
         Optional<SalesOffer> optSalesOffer = salesOfferRepository.findById(offerId);
-        if(!optSalesOffer.isPresent()) return null;
+        if(!optSalesOffer.isPresent()) return ContractResponse.builder().info("Nie znaleziono tej oferty").build();
         SalesOffer salesOffer = optSalesOffer.get();
         Optional<Contract> optContract = contractRepository.findById(salesOffer.getContractId());
-        if(!optContract.isPresent()) return null;
+        if(!optContract.isPresent()) return ContractResponse.builder().info("Nie znaleziono takiego kontraktu").build();
         Contract contract = optContract.get();
-        if(!contract.getPlayerId().equals(username)) return null;
+        if(!contract.getPlayerId().equals(username)) return ContractResponse.builder().info("Nie jesteś właścicielem kontraktu").build();
         contract.deleteOffer(offerId);
         contract.setCountOfContracts(contract.getCountOfContracts() + salesOffer.getCountOfContracts());
         if(contract.getOffers().size() == 0) contract.setOffers(null);
         contractRepository.update(contract);
         salesOfferRepository.delete(salesOffer);
 
-        return contract;
+        return ContractResponse.builder().info("Usunięto ofertę").contract(contract).build();
     }
 
     public Contract getContractById(int id) {
