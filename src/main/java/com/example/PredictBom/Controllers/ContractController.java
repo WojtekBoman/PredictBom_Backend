@@ -6,6 +6,7 @@ import com.example.PredictBom.Entities.PredictionMarket;
 import com.example.PredictBom.Models.AddOfferRequest;
 import com.example.PredictBom.Models.BetPrice;
 import com.example.PredictBom.Models.ContractDetailsResponse;
+import com.example.PredictBom.Models.ContractResponse;
 import com.example.PredictBom.Services.ContractService;
 import com.example.PredictBom.Services.PredictionMarketService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -116,20 +117,19 @@ public class ContractController {
     @PostMapping("/addOffer")
     public ResponseEntity<?> addOffer(Principal principal, @RequestBody AddOfferRequest addOfferRequest){
 
-        Contract contract = contractService.addOffer(principal.getName(),addOfferRequest);
-        System.out.println(contract);
-        if(contract == null) {
-            return ResponseEntity.badRequest().body("Wystąpił błąd");
+        ContractResponse contractResponse = contractService.addOffer(principal.getName(),addOfferRequest);
+        if(contractResponse.getContract() == null) {
+            return ResponseEntity.badRequest().body(contractResponse.getInfo());
         }
-        return ResponseEntity.ok(contract);
+        return ResponseEntity.ok(contractResponse.getContract());
     }
 
     @DeleteMapping("/deleteOffer")
     public ResponseEntity<?> addOffer(Principal principal,@RequestParam int offerId) {
-        Contract contract = contractService.deleteOffer(principal.getName(),offerId);
-        if(contract == null) {
-            return ResponseEntity.badRequest().body("Wystąpił błąd");
+        ContractResponse contractResponse = contractService.deleteOffer(principal.getName(),offerId);
+        if(contractResponse.getContract() == null) {
+            return ResponseEntity.badRequest().body(contractResponse.getInfo());
         }
-        return ResponseEntity.ok(contract);
+        return ResponseEntity.ok(contractResponse.getContract());
     }
 }

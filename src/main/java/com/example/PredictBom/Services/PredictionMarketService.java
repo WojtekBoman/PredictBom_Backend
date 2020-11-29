@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
+import org.springframework.stereotype.Controller;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -212,6 +213,15 @@ public class PredictionMarketService {
             PredictionMarket predictionMarket = optionalPredictionMarket.get();
             if(predictionMarket.isPublished()) return new PredictionMarketResponse("Nie możesz zmienić okładki w opublikowanym rynku",null);
             predictionMarket.setMarketCover(new Binary(BsonBinarySubType.BINARY, marketCover.getBytes()));
+            if(predictionMarket.getBets() != null) {
+                List<Contract> contracts = contractRepository.findAllByMarketId(id);
+                for (Contract contract : contracts) {
+                    MarketInfo marketInfo = contract.getMarketInfo();
+                    marketInfo.setMarketCover(new Binary(BsonBinarySubType.BINARY, marketCover.getBytes()));
+                    contract.setMarketInfo(marketInfo);
+                    contractRepository.update(contract);
+                }
+            }
             predictionMarketRepository.update(predictionMarket);
 
 
@@ -271,20 +281,37 @@ public class PredictionMarketService {
                 default:
                     marketCategory = MarketCategory.INNE;
             }
+
             marketToEdit.setCategory(marketCategory);
+            if(marketToEdit.getBets() != null) {
+                List<Contract> contracts = contractRepository.findAllByMarketId(marketId);
+                for (Contract contract : contracts) {
+                    MarketInfo marketInfo = contract.getMarketInfo();
+                    marketInfo.setTopic(topic);
+                    marketInfo.setMarketCategory(marketCategory);
+                    contractRepository.update(contract);
+                }
+            }
             predictionMarketRepository.update(marketToEdit);
             return new PredictionMarketResponse("Informacje o rynku został zaktualizowane",marketToEdit);
         }
 
         // TODO: 10.10.2020
-//        public PredictionMarketResponse deleteMarket(int marketId) {
-//            return null
-//        }
+        public PredictionMarketResponse deleteMarket(int marketId) {
+
+            Optional<PredictionMarket> optMarket = predictionMarketRepository.findByMarketId(marketId);
+            if(!optMarket.isPresent())  return PredictionMarketResponse.builder().info("Nie znaleziono rynku o podanym id").build();
+
+            PredictionMarket market = optMarket.get();
+            if(market.getBets() != null) return PredictionMarketResponse.builder().info("Aby usunąć rynek usuń wszystkie zakłady").build();
+
+            predictionMarketRepository.deleteByMarketId(marketId);
+
+            return PredictionMarketResponse.builder().info("Usunięto rynek").predictionMarket(market).build();
+        }
 
     private List<PredictionMarket> getPredictionMarkets(String marketTitle, String[] marketCategory, List<PredictionMarket> predictionMarketsList) {
-        System.out.println("Jestem tutaj");
         List<PredictionMarket> marketsFilteredByTitle = predictionMarketsList.stream().filter(item -> item.getTopic().toLowerCase().contains(marketTitle.toLowerCase())).collect(Collectors.toList());
-        System.out.println("Jestem tutaj");
         if(marketCategory.length == 0) return marketsFilteredByTitle;
         List<PredictionMarket> filteredMarkets = new ArrayList<>();
         for(String market : marketCategory) {
@@ -481,15 +508,12 @@ public class PredictionMarketService {
 
         PredictionMarket market = marketOpt.get();
 
+        if(market.getBets() == null) return new PredictionMarketResponse("Aby opublikować rynek, dodaj do niego zakłady",null);
+
         if(market.isPublished()) return new PredictionMarketResponse("Rynek jest już publiczny",null);
 
         market.setPublished(true);
         predictionMarketRepository.update(market);
-//        List<Contract> contracts = contractRepository.findAllByMarketId(marketId);
-//        for(Contract contract : contracts) {
-//            contract.setPredictionMarket(market);
-//            contractRepository.update(contract);
-//        }
 
         return new PredictionMarketResponse("Upubliczniono rynek",market);
     }
@@ -526,6 +550,7 @@ public class PredictionMarketService {
 
         market.setCorrectBetId(correctBetId);
         market.setCorrectBetOption(true);
+        market.setPredictedEndDate(new SimpleDateFormat("MM-dd-yyyy HH:mm:ss").format(new Date()));
         predictionMarketRepository.update(market);
         contractRepository.deleteAllByPlayerIdIsNull();
         return new PredictionMarketResponse("Rozwiązano rynek",market);
@@ -553,6 +578,7 @@ public class PredictionMarketService {
         contractRepository.deleteAllByPlayerIdIsNull();
         market.setCorrectBetOption(correctOption);
         market.setCorrectBetId(betId);
+        market.setPredictedEndDate(new SimpleDateFormat("MM-dd-yyyy HH:mm:ss").format(new Date()));
         predictionMarketRepository.update(market);
 
         return new PredictionMarketResponse("Rozwiązano rynek",market);

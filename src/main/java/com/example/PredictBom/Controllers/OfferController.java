@@ -32,7 +32,7 @@ public class OfferController {
     @GetMapping
     public ResponseEntity<?> getOffers(Principal principal, @RequestParam int betId, @RequestParam boolean option, Pageable pageable) {
 
-        List<OffersToBuyResponse> offers = contractService.getOffers(principal.getName(),betId,option);
+        List<OffersToBuyResponse> offers = contractService.getOffers(betId,option);
         return getResponseEntity(pageable,offers);
     }
 

@@ -85,6 +85,17 @@ public class MarketController {
         }
         }
 
+    @DeleteMapping("/delete")
+    @PreAuthorize("hasRole('ROLE_MODERATOR')")
+    public ResponseEntity<?> deleteMarket(@RequestParam int marketId){
+        PredictionMarketResponse response = predictionMarketService.deleteMarket(marketId);
+        if (response.getPredictionMarket() != null) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
 //    @GetMapping("/")
 //    public ResponseEntity<?> getAllMarkets() {
 //        return ResponseEntity.ok(predictionMarketService.getAllPredictionMarkets());

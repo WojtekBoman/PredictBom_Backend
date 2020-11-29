@@ -25,6 +25,8 @@ public interface PredictionMarketRepository extends MongoRepository<PredictionMa
 
     List<PredictionMarket> findByPublishedTrue(Sort sort);
 
+    PredictionMarket deleteByMarketId(int marketId);
+
     @Query("{'correctBetId' : {$lt : 1},'published': {$eq : true}}")
     List<PredictionMarket> findPublishedNotSolvedMarkets(Sort sort);
 

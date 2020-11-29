@@ -33,4 +33,7 @@ public interface ContractRepository extends MongoRepository<Contract,String>, Co
     List<Contract> deleteAllByPlayerIdIsNull();
     @Query("{'bet.id': ?0,'contractOption': ?1,'playerId' : {$ne : ?2},'offers' : {$ne : null}}")
     List<Contract> findOffersToBuy(int betId, boolean contractOption, String username);
+
+    @Query("{'bet.id': ?0,'contractOption': ?1,'offers' : {$ne : null}}")
+    List<Contract> findOffersToBuy(int betId, boolean contractOption);
 }
