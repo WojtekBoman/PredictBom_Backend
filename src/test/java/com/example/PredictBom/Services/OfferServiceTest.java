@@ -83,9 +83,9 @@ public class OfferServiceTest {
         String betOption = "betOption";
         int betId = 1;
         Set<Bet> bets = new HashSet<Bet>();
-        Bet bet = Bet.builder().id(betId).marketId(marketId).chosenOption(betOption).build();
+        Bet bet = Bet.builder().id(betId).marketId(marketId).title(betOption).build();
         bets.add(bet);
-        PredictionMarket market = PredictionMarket.builder().marketId(marketId).topic(topic).description(description).predictedEndDate(predictedEndDate).category(category).bets(bets).build();
+        PredictionMarket market = PredictionMarket.builder().marketId(marketId).topic(topic).description(description).endDate(predictedEndDate).category(category).bets(bets).build();
         when(marketRepository.findByMarketId(marketId)).thenReturn(Optional.of(market));
 
         //initialize contract and offer to buy
@@ -94,8 +94,8 @@ public class OfferServiceTest {
         int contractShares = 100;
         int sellShares = 50;
         double sellPrice = 0.5;
-        Contract contract = Contract.builder().id(contractId).bet(bet).playerId(dealerUsername).countOfContracts(contractShares).build();
-        SalesOffer salesOffer = SalesOffer.builder().id(offerId).contractId(contractId).valueOfShares(sellPrice).countOfContracts(sellShares).build();
+        Contract contract = Contract.builder().id(contractId).bet(bet).playerId(dealerUsername).shares(contractShares).build();
+        Offer salesOffer = Offer.builder().id(offerId).contractId(contractId).price(sellPrice).shares(sellShares).build();
 
         int buyShares = 10;
 
@@ -105,7 +105,7 @@ public class OfferServiceTest {
         when(contractRepository.findByPlayerIdAndBetIdAndContractOption(username,betId,true)).thenReturn(Optional.empty());
 
         BuyContractResponse buyContractResponse = offerService.buyShares(username,offerId,buyShares);
-        assertEquals(buyContractResponse.getBoughtContract().getCountOfContracts(),10);
+        assertEquals(buyContractResponse.getBoughtContract().getShares(),10);
     }
 
 
@@ -131,9 +131,9 @@ public class OfferServiceTest {
         String betOption = "betOption";
         int betId = 1;
         Set<Bet> bets = new HashSet<Bet>();
-        Bet bet = Bet.builder().id(betId).marketId(marketId).chosenOption(betOption).build();
+        Bet bet = Bet.builder().id(betId).marketId(marketId).title(betOption).build();
         bets.add(bet);
-        PredictionMarket market = PredictionMarket.builder().marketId(marketId).topic(topic).description(description).predictedEndDate(predictedEndDate).category(category).bets(bets).build();
+        PredictionMarket market = PredictionMarket.builder().marketId(marketId).topic(topic).description(description).endDate(predictedEndDate).category(category).bets(bets).build();
         when(marketRepository.findByMarketId(marketId)).thenReturn(Optional.of(market));
 
         //initialize contract and offer to buy
@@ -142,8 +142,8 @@ public class OfferServiceTest {
         int contractShares = 1000;
         int sellShares = 500;
         double sellPrice = 0.5;
-        Contract contract = Contract.builder().id(contractId).bet(bet).playerId(dealerUsername).countOfContracts(contractShares).build();
-        SalesOffer salesOffer = SalesOffer.builder().id(offerId).contractId(contractId).valueOfShares(sellPrice).countOfContracts(sellShares).build();
+        Contract contract = Contract.builder().id(contractId).bet(bet).playerId(dealerUsername).shares(contractShares).build();
+        Offer salesOffer = Offer.builder().id(offerId).contractId(contractId).price(sellPrice).shares(sellShares).build();
 
         int buyShares = 100;
 
@@ -177,9 +177,9 @@ public class OfferServiceTest {
         String betOption = "betOption";
         int betId = 1;
         Set<Bet> bets = new HashSet<Bet>();
-        Bet bet = Bet.builder().id(betId).marketId(marketId).chosenOption(betOption).build();
+        Bet bet = Bet.builder().id(betId).marketId(marketId).title(betOption).build();
         bets.add(bet);
-        PredictionMarket market = PredictionMarket.builder().marketId(marketId).topic(topic).description(description).predictedEndDate(predictedEndDate).category(category).bets(bets).build();
+        PredictionMarket market = PredictionMarket.builder().marketId(marketId).topic(topic).description(description).endDate(predictedEndDate).category(category).bets(bets).build();
         when(marketRepository.findByMarketId(marketId)).thenReturn(Optional.of(market));
 
         //initialize contract and offer to buy
@@ -189,14 +189,14 @@ public class OfferServiceTest {
         int sellShares = 50;
         double sellPrice = 0.5;
         boolean contractOption = true;
-        Contract contract = Contract.builder().id(contractId).bet(bet).playerId(dealerUsername).countOfContracts(contractShares).contractOption(contractOption).build();
-        SalesOffer salesOffer = SalesOffer.builder().id(offerId).contractId(contractId).valueOfShares(sellPrice).countOfContracts(sellShares).build();
+        Contract contract = Contract.builder().id(contractId).bet(bet).playerId(dealerUsername).shares(contractShares).contractOption(contractOption).build();
+        Offer salesOffer = Offer.builder().id(offerId).contractId(contractId).price(sellPrice).shares(sellShares).build();
 
         int buyShares = 10;
 
         int userContractId = 2;
         int userContractShares = 30;
-        Contract userContract = Contract.builder().id(userContractId).bet(bet).playerId(username).countOfContracts(userContractShares).contractOption(true).build();
+        Contract userContract = Contract.builder().id(userContractId).bet(bet).playerId(username).shares(userContractShares).contractOption(true).build();
 
         when(playerRepository.findByUsername(player.getUsername())).thenReturn(player);
         when(contractRepository.findById(contractId)).thenReturn(Optional.of(contract));
@@ -205,7 +205,7 @@ public class OfferServiceTest {
 
         BuyContractResponse buyContractResponse = offerService.buyShares(username,offerId,buyShares);
         System.out.println(buyContractResponse.getInfo());
-        assertEquals(buyContractResponse.getBoughtContract().getCountOfContracts(),userContractShares + buyShares);
+        assertEquals(buyContractResponse.getBoughtContract().getShares(),userContractShares + buyShares);
         assertEquals(buyContractResponse.getBoughtContract().getId(),userContractId);
     }
 }

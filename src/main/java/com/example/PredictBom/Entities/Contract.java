@@ -22,15 +22,15 @@ public class Contract {
     private MarketInfo marketInfo;
     private String playerId;
     private boolean contractOption;
-    private int countOfContracts;
+    private int shares;
     @Builder.Default
     private ContractStatus contractStatus = ContractStatus.PENDING;
-    private HashSet<SalesOffer> offers;
+    private HashSet<Offer> offers;
     @Builder.Default
     private String modifiedDate = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss").format(new Date());
 
 
-    public void addOffer(SalesOffer offer){
+    public void addOffer(Offer offer){
         if(offers == null){
             this.offers = new HashSet<>();
         }
@@ -39,12 +39,13 @@ public class Contract {
 
     public void deleteOffer(int offerId) {
         if(offers != null) {
-            SalesOffer offerToDelete = SalesOffer.builder().id(offerId).build();
+            Offer offerToDelete = Offer.builder().id(offerId).build();
             this.offers.remove(offerToDelete);
+            if(this.offers.size() == 0)this.offers = null;
         }
     }
 
-    public void updateOffer(SalesOffer offer) {
+    public void updateOffer(Offer offer) {
         if(offers != null) {
             this.offers.remove(offer);
             this.offers.add(offer);

@@ -1,78 +1,38 @@
 package com.example.PredictBom.Controllers;
 
 
-import com.example.PredictBom.BetRequest;
-import com.example.PredictBom.CreateMarketRequest;
+import com.example.PredictBom.Models.BetRequest;
+import com.example.PredictBom.Models.CreateMarketRequest;
 import com.example.PredictBom.Entities.*;
 import com.example.PredictBom.Repositories.*;
 import com.example.PredictBom.Security.JWT.JwtUtils;
-import com.example.PredictBom.Services.CounterService;
-import com.example.PredictBom.Services.PasswordResetTokenService;
-import com.example.PredictBom.Services.PredictionMarketService;
-import com.example.PredictBom.Services.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.mongodb.BasicDBObjectBuilder;
-import com.mongodb.DBObject;
-import com.mongodb.client.MongoClients;
-import de.flapdoodle.embed.mongo.MongodExecutable;
-import de.flapdoodle.embed.mongo.MongodStarter;
-import de.flapdoodle.embed.mongo.config.IMongodConfig;
-import de.flapdoodle.embed.mongo.config.MongodConfigBuilder;
-import de.flapdoodle.embed.mongo.config.Net;
-import de.flapdoodle.embed.mongo.distribution.IFeatureAwareVersion;
-import de.flapdoodle.embed.mongo.distribution.Version;
-import de.flapdoodle.embed.process.distribution.GenericVersion;
-import de.flapdoodle.embed.process.runtime.Network;
-import jdk.nashorn.internal.ir.RuntimeNode;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
 
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.test.context.support.AnnotationConfigContextLoader;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.WebApplicationContext;
 
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
 
 
 @RunWith(SpringRunner.class)
@@ -176,7 +136,7 @@ class MarketControllerTest {
 //
 
         CreateMarketRequest createMarketRequest = CreateMarketRequest
-                .builder().description("opis").predictedEndDate("2021-01-01").topic("topic")
+                .builder().description("opis").endDate("2021-01-01").topic("topic")
                 .category("SPORT").build();
 
         ObjectMapper mapper = new ObjectMapper();
@@ -203,7 +163,7 @@ class MarketControllerTest {
 
         Counter counter = counterRepository.findByName("markets");
 
-        BetRequest betRequest = BetRequest.builder().marketId(counter.getValue()).chosenOption("test1").noPrice(0.5).yesPrice(0.5).shares(10000).build();
+        BetRequest betRequest = BetRequest.builder().marketId(counter.getValue()).title("test1").noPrice(0.5).yesPrice(0.5).shares(10000).build();
 
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(SerializationFeature.WRAP_ROOT_VALUE, false);
@@ -229,7 +189,7 @@ class MarketControllerTest {
 
         Counter counter = counterRepository.findByName("markets");
 
-        BetRequest betRequest = BetRequest.builder().marketId(counter.getValue()).chosenOption("test1").noPrice(0.5).yesPrice(0.5).shares(10000).build();
+        BetRequest betRequest = BetRequest.builder().marketId(counter.getValue()).title("test1").noPrice(0.5).yesPrice(0.5).shares(10000).build();
 
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(SerializationFeature.WRAP_ROOT_VALUE, false);
@@ -267,7 +227,7 @@ class MarketControllerTest {
     void createMarket_expected401() throws Exception {
 
         CreateMarketRequest createMarketRequest = CreateMarketRequest
-                .builder().description("opis").predictedEndDate("2021-01-01").topic("topic3")
+                .builder().description("opis").endDate("2021-01-01").topic("topic3")
                 .category("SPORT").build();
 
         ObjectMapper mapper = new ObjectMapper();

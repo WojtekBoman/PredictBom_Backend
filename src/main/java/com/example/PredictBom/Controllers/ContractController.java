@@ -14,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
@@ -80,8 +81,9 @@ public class ContractController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getContractById(@PathVariable int id) {
-        Contract contract = contractService.getContractById(id);
+    @PreAuthorize("hasRole('ROLE_PLAYER')")
+    public ResponseEntity<?> getContractById(Principal principal,@PathVariable int id) {
+        Contract contract = contractService.getContractById(id,principal.getName());
         if (contract == null){
             return ResponseEntity.badRequest().body("Nie znaleziono kontraktu o podanym id");
         }else{
@@ -99,15 +101,15 @@ public class ContractController {
         }
     }
 
-    @GetMapping("/details")
-    public ResponseEntity<?> getContractDetailsInfo(@RequestParam int betId) {
-        ContractDetailsResponse response = contractService.getContractDetails(betId);
-        if(response.getPredictionMarket() == null) {
-            return ResponseEntity.badRequest().body(response);
-        }else{
-            return ResponseEntity.ok(response);
-        }
-    }
+//    @GetMapping("/details")
+//    public ResponseEntity<?> getContractDetailsInfo(@RequestParam int betId) {
+//        ContractDetailsResponse response = contractService.getContractDetails(betId);
+//        if(response.getPredictionMarket() == null) {
+//            return ResponseEntity.badRequest().body(response);
+//        }else{
+//            return ResponseEntity.ok(response);
+//        }
+//    }
 
 //    @GetMapping("/lastPrice")
 //    public ResponseEntity<?> getLastContractPrice(@RequestParam int contractId) {

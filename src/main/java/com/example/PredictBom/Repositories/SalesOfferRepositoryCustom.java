@@ -1,7 +1,7 @@
 package com.example.PredictBom.Repositories;
 
-import com.example.PredictBom.Entities.SalesOffer;
+import com.example.PredictBom.Entities.Offer;
 
 public interface SalesOfferRepositoryCustom {
-    boolean update(SalesOffer salesOffer);
+    boolean update(Offer salesOffer);
 }

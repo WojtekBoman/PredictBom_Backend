@@ -11,7 +11,7 @@ public class BuyContractRequest {
 
     private double maxPrice;
     private int marketId;
-    private int countOfShares;
+    private int shares;
     private int betId;
     private boolean contractOption;
 }

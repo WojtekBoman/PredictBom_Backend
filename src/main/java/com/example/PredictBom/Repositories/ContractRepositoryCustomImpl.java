@@ -1,15 +1,12 @@
 package com.example.PredictBom.Repositories;
 
 import com.example.PredictBom.Entities.Contract;
-import com.example.PredictBom.Entities.Player;
 import com.mongodb.client.result.UpdateResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
-
-import java.util.List;
 
 public class ContractRepositoryCustomImpl implements ContractRepositoryCustom {
     @Autowired
@@ -20,7 +17,7 @@ public class ContractRepositoryCustomImpl implements ContractRepositoryCustom {
         Query query = new Query(Criteria.where("_id").is(contract.getId()));
         Update update = new Update();
         update.set("offers",contract.getOffers());
-        update.set("countOfContracts",contract.getCountOfContracts());
+        update.set("shares",contract.getShares());
         update.set("modifiedDate",contract.getModifiedDate());
         update.set("marketInfo",contract.getMarketInfo());
         update.set("contractStatus",contract.getContractStatus());

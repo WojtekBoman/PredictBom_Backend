@@ -2,49 +2,34 @@ package com.example.PredictBom.Controllers;
 
 import java.security.Principal;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.stream.Collectors;
 
 
-import com.example.PredictBom.ChangePasswordWithTokenRequest;
+import com.example.PredictBom.Models.ChangePasswordWithTokenRequest;
 import com.example.PredictBom.Entities.*;
 import com.example.PredictBom.Models.EditPasswordRequest;
-import com.example.PredictBom.Payload.Request.LoginRequest;
-import com.example.PredictBom.Payload.Request.SignupRequest;
-import com.example.PredictBom.Payload.Response.JwtResponse;
-import com.example.PredictBom.Payload.Response.MessageResponse;
+import com.example.PredictBom.Models.LoginRequest;
+import com.example.PredictBom.Models.SignupRequest;
 import com.example.PredictBom.Repositories.ModeratorRepository;
 import com.example.PredictBom.Repositories.PlayerRepository;
 import com.example.PredictBom.Repositories.RoleRepository;
 import com.example.PredictBom.Repositories.UserRepository;
 import com.example.PredictBom.Security.JWT.JwtUtils;
-import com.example.PredictBom.Security.Services.UserDetailsImpl;
 import com.example.PredictBom.Services.AuthService;
 import com.example.PredictBom.Services.PasswordResetTokenService;
 import com.example.PredictBom.Services.UserService;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.mongodb.core.aggregation.ArithmeticOperators;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
-import javax.xml.bind.DatatypeConverter;
 
 import static com.example.PredictBom.Services.UserService.*;
-import static javax.crypto.Cipher.SECRET_KEY;
 
 
 @CrossOrigin(origins = "*", maxAge = 3600)

@@ -1,4 +1,4 @@
-package com.example.PredictBom;
+package com.example.PredictBom.Models;
 
 import lombok.Builder;
 import lombok.Getter;
@@ -25,7 +25,7 @@ public class CreateMarketRequest {
     private String category;
 
     @Size(min = 3, max = 40)
-    private String predictedEndDate = "3000-01-01";
+    private String endDate = "3000-01-01";
 
     @NotBlank
     private String description;
