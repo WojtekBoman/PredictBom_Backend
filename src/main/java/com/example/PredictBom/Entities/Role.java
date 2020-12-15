@@ -35,4 +35,9 @@ public class Role {
         this.name = name;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        return id.equals(((Role) o).getId());
+    }
+
 }

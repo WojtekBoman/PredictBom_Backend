@@ -9,6 +9,6 @@ import lombok.Setter;
 @Builder
 public class AddOfferRequest {
     private int contractId;
-    private int countOfShares;
-    private double sellPrice;
+    private int shares;
+    private double price;
 }

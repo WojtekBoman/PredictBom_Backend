@@ -1,4 +1,4 @@
-package com.example.PredictBom.Payload.Request;
+package com.example.PredictBom.Models;
 
 import lombok.Builder;
 import lombok.Getter;

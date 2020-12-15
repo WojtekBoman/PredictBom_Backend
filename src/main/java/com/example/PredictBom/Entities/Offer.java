@@ -6,7 +6,6 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
 import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import javax.persistence.Id;
@@ -17,21 +16,21 @@ import java.util.Date;
 @Getter
 @Setter
 @Document(collection = "offers")
-public class SalesOffer implements Comparable<SalesOffer> {
+public class Offer implements Comparable<Offer> {
 
     @Id
     @Indexed(unique = true)
     private int id;
     private int contractId;
-    private int countOfContracts;
+    private int shares;
     @Builder.Default
     private String createdDate = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss").format(new Date());
-    private double valueOfShares;
+    private double price;
 
 
     @Override
     public boolean equals(Object o) {
-        return id == ((SalesOffer) o).getId();
+        return id == ((Offer) o).getId();
     }
 
     @Override
@@ -41,9 +40,9 @@ public class SalesOffer implements Comparable<SalesOffer> {
 
     @SneakyThrows
     @Override
-    public int compareTo(SalesOffer o) {
-        if(this.getValueOfShares() > o.getValueOfShares()) return 1;
-        if(this.getValueOfShares() < o.getValueOfShares()) return -1;
+    public int compareTo(Offer o) {
+        if(this.getPrice() > o.getPrice()) return 1;
+        if(this.getPrice() < o.getPrice()) return -1;
         SimpleDateFormat sdf = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss");
         return sdf.parse(this.createdDate).compareTo(sdf.parse(o.getCreatedDate()));
     }

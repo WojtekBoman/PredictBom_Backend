@@ -20,25 +20,13 @@ public class Bet {
     @Id
     private int id;
     private int marketId;
-    private String chosenOption;
-
-//
-//    public void addPriceYesContract(Price price) {
-//        if(historyOfPricesYesContracts == null) {
-//            this.historyOfPricesYesContracts = new ArrayList<Price>();
-//        }
-//        historyOfPricesYesContracts.add(price);
-//    }
-//
-//    public void addPriceNoContract(Price price) {
-//        if(historyOfPricesNoContracts == null) {
-//            this.historyOfPricesNoContracts = new ArrayList<Price>();
-//        }
-//        historyOfPricesNoContracts.add(price);
-//    }
+    private String title;
 
     @Override
     public boolean equals(Object o) {
+        if(o == null) return false;
+        if(o == this) return true;
+        if(!(o instanceof Bet)) return false;
         return id == ((Bet) o).getId();
     }
 
@@ -47,3 +35,4 @@ public class Bet {
         return ((Integer) id).hashCode();
     }
 }
+

@@ -1,4 +1,4 @@
-package com.example.PredictBom.Payload.Response;
+package com.example.PredictBom.Models;
 
 public class MessageResponse {
     private String message;

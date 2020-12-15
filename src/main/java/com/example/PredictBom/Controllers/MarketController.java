@@ -1,9 +1,8 @@
 package com.example.PredictBom.Controllers;
 
-import com.example.PredictBom.BetRequest;
-import com.example.PredictBom.CreateMarketRequest;
+import com.example.PredictBom.Models.BetRequest;
+import com.example.PredictBom.Models.CreateMarketRequest;
 import com.example.PredictBom.Entities.PredictionMarket;
-import com.example.PredictBom.Entities.SalesOffer;
 import com.example.PredictBom.Models.BuyContractRequest;
 import com.example.PredictBom.Models.BuyContractResponse;
 import com.example.PredictBom.Models.MarketWithBetsPricesResponse;
@@ -15,7 +14,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -40,8 +38,7 @@ public class MarketController {
     public ResponseEntity<?> createPredictionMarket(Principal principal, @RequestBody CreateMarketRequest createMarketRequest) throws IOException {
 //        CreatePredictionMarketResponse response = predictionMarketService.createPredictionMarket(principal.getName(),createMarketRequest.getMarketTitle(),createMarketRequest.getMarketCategory(),createMarketRequest.getPredictedDateEnd(),createMarketRequest.getMarketCover());
 
-        PredictionMarketResponse response = predictionMarketService.createPredictionMarket(principal.getName(),createMarketRequest.getTopic(), createMarketRequest.getCategory(), createMarketRequest.getPredictedEndDate(), createMarketRequest.getDescription());
-        System.out.println(response);
+        PredictionMarketResponse response = predictionMarketService.createPredictionMarket(principal.getName(),createMarketRequest.getTopic(), createMarketRequest.getCategory(), createMarketRequest.getEndDate(), createMarketRequest.getDescription());
         if (response.getPredictionMarket() != null) {
             return ResponseEntity.ok(response);
         } else {
@@ -136,7 +133,7 @@ public class MarketController {
 
     @PutMapping("/edit/{id}")
     public ResponseEntity<?> editMarketById(@PathVariable("id") int marketId, @RequestBody CreateMarketRequest editRequest) {
-        PredictionMarketResponse response = predictionMarketService.editMarket(marketId,editRequest.getTopic(),editRequest.getCategory(),editRequest.getPredictedEndDate(),editRequest.getDescription());
+        PredictionMarketResponse response = predictionMarketService.editMarket(marketId,editRequest.getTopic(),editRequest.getCategory(),editRequest.getEndDate(),editRequest.getDescription());
 
         if(response.getPredictionMarket() != null) {
             return ResponseEntity.ok(response);
@@ -225,7 +222,7 @@ public class MarketController {
 
     @PostMapping("/buyContract")
     public ResponseEntity<?> buyContract(Principal principal, @RequestBody BuyContractRequest buyContractRequest) {
-            BuyContractResponse response = predictionMarketService.buyContract(principal.getName(),buyContractRequest.getBetId(),buyContractRequest.getMarketId(),buyContractRequest.isContractOption(),buyContractRequest.getCountOfShares(),buyContractRequest.getMaxPrice());
+            BuyContractResponse response = predictionMarketService.buyContract(principal.getName(),buyContractRequest.getBetId(),buyContractRequest.getMarketId(),buyContractRequest.isContractOption(),buyContractRequest.getShares(),buyContractRequest.getMaxPrice());
         if(response.getBoughtContract() == null) {
             return ResponseEntity.badRequest().body(response);
         }else{

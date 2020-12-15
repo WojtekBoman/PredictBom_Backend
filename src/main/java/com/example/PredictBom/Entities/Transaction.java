@@ -20,7 +20,7 @@ public class Transaction {
     @Builder.Default
     private String transactionDate = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss").format(new Date());
     private boolean option;
-    private int countOfShares;
+    private int shares;
     private double price;
     private Bet bet;
     private MarketInfo marketInfo;

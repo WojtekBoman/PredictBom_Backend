@@ -1,4 +1,4 @@
-package com.example.PredictBom;
+package com.example.PredictBom.Models;
 
 import lombok.Builder;
 import lombok.Getter;
@@ -13,5 +13,5 @@ public class BetRequest {
     private double yesPrice;
     private double noPrice;
     private int shares;
-    private String chosenOption;
+    private String title;
 }

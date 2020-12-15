@@ -37,8 +37,8 @@ public class OfferController {
     }
 
     @PostMapping("/buy")
-    public ResponseEntity<?> buyShares(Principal principal, @RequestParam int offerId, @RequestParam int countOfShares) {
-        BuyContractResponse response = offerService.buyShares(principal.getName(),offerId,countOfShares);
+    public ResponseEntity<?> buyShares(Principal principal, @RequestParam int offerId, @RequestParam int shares) {
+        BuyContractResponse response = offerService.buyShares(principal.getName(),offerId,shares);
         if(response.getBoughtContract() == null) {
             return ResponseEntity.badRequest().body(response);
         }else return ResponseEntity.ok(response);

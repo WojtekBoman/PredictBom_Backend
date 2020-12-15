@@ -1,10 +1,10 @@
 package com.example.PredictBom.Services;
 
 import com.example.PredictBom.Entities.*;
-import com.example.PredictBom.Payload.Request.LoginRequest;
-import com.example.PredictBom.Payload.Request.SignupRequest;
-import com.example.PredictBom.Payload.Response.JwtResponse;
-import com.example.PredictBom.Payload.Response.MessageResponse;
+import com.example.PredictBom.Models.LoginRequest;
+import com.example.PredictBom.Models.SignupRequest;
+import com.example.PredictBom.Models.JwtResponse;
+import com.example.PredictBom.Models.MessageResponse;
 import com.example.PredictBom.Repositories.ModeratorRepository;
 import com.example.PredictBom.Repositories.PlayerRepository;
 import com.example.PredictBom.Repositories.RoleRepository;
@@ -30,6 +30,11 @@ import java.util.stream.Collectors;
 
 @Service
 public class AuthService {
+
+    public static final String USERNAME_ALREADY_USED_INFO = "Nazwa użytkownika jest już zajęta";
+    public static final String EMAIL_ALREADY_USED_INFO = "Podany adres e-mail jest już zajęty";
+    public static final String USER_SUCCESSFUL_REGISTERED = "Użytkownik został poprawnie zarejestrowany";
+    public static final String ROLE_IS_NOT_FOUND_INFO = "Nie znaleziono podanej roli użytkownika";
 
     @Autowired
     AuthService authService;
@@ -79,17 +84,13 @@ public class AuthService {
 
             if(!lastLoginDate[0].equals(dateSplit[0])) {
                 player.setBudget(player.getBudget() + 100);
-                player.setLastLoginDate(date);
-                playerRepository.update(player);
             }else if(!lastLoginDate[1].equals(dateSplit[1])){
                 player.setBudget(player.getBudget() + 100);
-                player.setLastLoginDate(date);
-                playerRepository.update(player);
             }else if(!lastLoginDate[2].substring(0,4).equals(dateSplit[2].substring(0,4))) {
                 player.setBudget(player.getBudget() + 100);
-                player.setLastLoginDate(date);
-                playerRepository.update(player);
             }
+            player.setLastLoginDate(date);
+            playerRepository.update(player);
         }
 
         return new JwtResponse(jwt,
@@ -102,13 +103,13 @@ public class AuthService {
         if (userRepository.existsByUsername(signUpRequest.getUsername())) {
             return ResponseEntity
                     .badRequest()
-                    .body(new MessageResponse("Ta nazwa użytkownika jest już zajęta!"));
+                    .body(new MessageResponse(USERNAME_ALREADY_USED_INFO));
         }
 
         if (userRepository.existsByEmail(signUpRequest.getEmail())) {
             return ResponseEntity
                     .badRequest()
-                    .body(new MessageResponse("Użytkownik o tym mailu już istnieje"));
+                    .body(new MessageResponse(EMAIL_ALREADY_USED_INFO));
         }
 
         // Create new user's account
@@ -121,7 +122,7 @@ public class AuthService {
 
         if (strRoles == null) {
             Role userRole = roleRepository.findByName(ERole.ROLE_PLAYER)
-                    .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+                    .orElseThrow(() -> new RuntimeException(ROLE_IS_NOT_FOUND_INFO));
             roles.add(userRole);
 
             Player player = new Player(signUpRequest.getUsername(), signUpRequest.getFirstName(), signUpRequest.getSurname(),
@@ -131,7 +132,7 @@ public class AuthService {
             player.setRoles(roles);
 
             playerRepository.save(player);
-            return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
+            return ResponseEntity.ok(new MessageResponse(ROLE_IS_NOT_FOUND_INFO));
 //            Role modRole = roleRepository.findByName(ERole.ROLE_MODERATOR)
 //                    .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
 //            roles.add(modRole);
@@ -147,13 +148,13 @@ public class AuthService {
                 switch (role) {
                     case "admin":
                         Role adminRole = roleRepository.findByName(ERole.ROLE_ADMIN)
-                                .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+                                .orElseThrow(() -> new RuntimeException(ROLE_IS_NOT_FOUND_INFO));
                         roles.add(adminRole);
 
                         break;
                     case "mod":
                         Role modRole = roleRepository.findByName(ERole.ROLE_MODERATOR)
-                                .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+                                .orElseThrow(() -> new RuntimeException(ROLE_IS_NOT_FOUND_INFO));
                         roles.add(modRole);
 
                         Moderator moderator = new Moderator(signUpRequest.getUsername(), signUpRequest.getFirstName(), signUpRequest.getSurname(),
@@ -167,7 +168,7 @@ public class AuthService {
                         break;
                     default:
                         Role userRole = roleRepository.findByName(ERole.ROLE_PLAYER)
-                                .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+                                .orElseThrow(() -> new RuntimeException(ROLE_IS_NOT_FOUND_INFO));
                         roles.add(userRole);
 
                         Player player = new Player(signUpRequest.getUsername(), signUpRequest.getFirstName(), signUpRequest.getSurname(),
@@ -185,6 +186,6 @@ public class AuthService {
         user.setRoles(roles);
         userRepository.save(user);
 
-        return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
+        return ResponseEntity.ok(new MessageResponse(USER_SUCCESSFUL_REGISTERED));
     }
 }

@@ -1,9 +1,7 @@
 package com.example.PredictBom.Services;
 
 import com.example.PredictBom.Entities.User;
-import com.example.PredictBom.Payload.Request.LoginRequest;
-import com.example.PredictBom.Payload.Request.SignupRequest;
-import com.example.PredictBom.Payload.Response.JwtResponse;
+import com.example.PredictBom.Models.SignupRequest;
 import com.example.PredictBom.Repositories.UserRepository;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -12,14 +10,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import sun.rmi.runtime.Log;
-
-import java.util.Collection;
-import java.util.Optional;
 
 import static org.mockito.Mockito.when;
 import static org.mockito.ArgumentMatchers.any;
@@ -105,8 +96,4 @@ public class AuthServiceTest {
         assertEquals(response.getStatusCodeValue(),400);
     }
 
-    @Test
-    public void changePassword() {
-
-    }
 }

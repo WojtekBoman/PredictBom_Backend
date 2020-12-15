@@ -29,7 +29,7 @@ public class PredictionMarket {
     @Builder.Default
     private String createdDate = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss").format(new Date());
     @Builder.Default
-    private String predictedEndDate;
+    private String endDate;
     private String description;
     private String author;
     private boolean correctBetOption;

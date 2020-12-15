@@ -24,7 +24,9 @@ public class TransactionController {
     TransactionService transactionService;
 
     @GetMapping("/chart")
-    public ResponseEntity<?> getTransactions(@RequestParam int betId, @RequestParam boolean option,String timeAgo) {
+    public ResponseEntity<?> getTransactions(@RequestParam int betId,
+                                             @RequestParam boolean option,
+                                             @RequestParam String timeAgo) {
         return ResponseEntity.ok(transactionService.getTransactions(betId,option,timeAgo));
     }
 
