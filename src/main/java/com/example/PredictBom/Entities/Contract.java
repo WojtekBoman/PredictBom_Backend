@@ -27,7 +27,7 @@ public class Contract {
     private ContractStatus contractStatus = ContractStatus.PENDING;
     private HashSet<Offer> offers;
     @Builder.Default
-    private String modifiedDate = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss").format(new Date());
+    private String modifiedDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
 
 
     public void addOffer(Offer offer){

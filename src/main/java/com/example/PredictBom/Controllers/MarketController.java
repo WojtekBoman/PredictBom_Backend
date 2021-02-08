@@ -40,9 +40,9 @@ public class MarketController {
 
         PredictionMarketResponse response = predictionMarketService.createPredictionMarket(principal.getName(),createMarketRequest.getTopic(), createMarketRequest.getCategory(), createMarketRequest.getEndDate(), createMarketRequest.getDescription());
         if (response.getPredictionMarket() != null) {
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(response.getPredictionMarket());
         } else {
-            return ResponseEntity.badRequest().body(response);
+            return ResponseEntity.badRequest().body(response.getInfo());
         }
     }
 
@@ -67,7 +67,7 @@ public class MarketController {
         if (response.getPredictionMarket() != null) {
             return ResponseEntity.ok(response);
         } else {
-            return ResponseEntity.badRequest().body(response);
+            return ResponseEntity.badRequest().body(response.getInfo());
         }
     }
 
@@ -76,9 +76,9 @@ public class MarketController {
     public ResponseEntity<?> removeBet(@RequestParam int betId){
         PredictionMarketResponse response = predictionMarketService.deleteBet(betId);
         if (response.getPredictionMarket() != null) {
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(response.getPredictionMarket());
         } else {
-            return ResponseEntity.badRequest().body(response);
+            return ResponseEntity.badRequest().body(response.getInfo());
         }
         }
 
@@ -87,9 +87,9 @@ public class MarketController {
     public ResponseEntity<?> deleteMarket(@RequestParam int marketId){
         PredictionMarketResponse response = predictionMarketService.deleteMarket(marketId);
         if (response.getPredictionMarket() != null) {
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(response.getPredictionMarket());
         } else {
-            return ResponseEntity.badRequest().body(response);
+            return ResponseEntity.badRequest().body(response.getInfo());
         }
     }
 
@@ -136,9 +136,9 @@ public class MarketController {
         PredictionMarketResponse response = predictionMarketService.editMarket(marketId,editRequest.getTopic(),editRequest.getCategory(),editRequest.getEndDate(),editRequest.getDescription());
 
         if(response.getPredictionMarket() != null) {
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(response.getPredictionMarket());
         }else{
-            return ResponseEntity.badRequest().body(response);
+            return ResponseEntity.badRequest().body(response.getInfo());
         }
 
     }
@@ -149,9 +149,9 @@ public class MarketController {
         PredictionMarketResponse response = predictionMarketService.setMarketCover(marketId, marketCover);
 
         if (response.getPredictionMarket() != null) {
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(response.getPredictionMarket());
          } else {
-             return ResponseEntity.badRequest().body(response);
+             return ResponseEntity.badRequest().body(response.getInfo());
     }
     }
 
@@ -206,9 +206,9 @@ public class MarketController {
         PredictionMarketResponse response = predictionMarketService.makeMarketPublic(marketId);
 
         if(response.getPredictionMarket() != null) {
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(response.getPredictionMarket());
         }else{
-            return ResponseEntity.badRequest().body(response);
+            return ResponseEntity.badRequest().body(response.getInfo());
         }
     }
 
@@ -223,10 +223,10 @@ public class MarketController {
     @PostMapping("/buyContract")
     public ResponseEntity<?> buyContract(Principal principal, @RequestBody BuyContractRequest buyContractRequest) {
             BuyContractResponse response = predictionMarketService.buyContract(principal.getName(),buyContractRequest.getBetId(),buyContractRequest.getMarketId(),buyContractRequest.isContractOption(),buyContractRequest.getShares(),buyContractRequest.getMaxPrice());
-        if(response.getBoughtContract() == null) {
-            return ResponseEntity.badRequest().body(response);
-        }else{
+        if(response.getBoughtContract() != null) {
             return ResponseEntity.ok(response);
+        }else{
+            return ResponseEntity.badRequest().body(response.getInfo());
         }
     }
 
@@ -239,10 +239,10 @@ public class MarketController {
     public ResponseEntity<?> solveMultiBetMarket(@RequestParam int marketId, @RequestParam int betId) {
         PredictionMarketResponse response = predictionMarketService.solveMultiBetMarket(marketId,betId);
 
-        if(response.getPredictionMarket() == null) {
-            return ResponseEntity.badRequest().body(response);
+        if(response.getPredictionMarket() != null) {
+            return ResponseEntity.ok(response.getPredictionMarket());
         }else{
-            return ResponseEntity.ok(response);
+            return ResponseEntity.badRequest().body(response.getInfo());
         }
     }
 
@@ -250,10 +250,10 @@ public class MarketController {
     public ResponseEntity<?> solveSingleBetMarket(@RequestParam int marketId, @RequestParam int betId,@RequestParam boolean correctOption) {
         PredictionMarketResponse response = predictionMarketService.solveSingleBetMarket(marketId,betId,correctOption);
 
-        if(response.getPredictionMarket() == null) {
-            return ResponseEntity.badRequest().body(response);
+        if(response.getPredictionMarket() != null) {
+            return ResponseEntity.ok(response.getPredictionMarket());
         }else{
-            return ResponseEntity.ok(response);
+            return ResponseEntity.badRequest().body(response.getInfo());
         }
     }
 }

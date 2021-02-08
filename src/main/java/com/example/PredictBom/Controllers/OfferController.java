@@ -40,7 +40,7 @@ public class OfferController {
     public ResponseEntity<?> buyShares(Principal principal, @RequestParam int offerId, @RequestParam int shares) {
         BuyContractResponse response = offerService.buyShares(principal.getName(),offerId,shares);
         if(response.getBoughtContract() == null) {
-            return ResponseEntity.badRequest().body(response);
+            return ResponseEntity.badRequest().body(response.getInfo());
         }else return ResponseEntity.ok(response);
     }
 

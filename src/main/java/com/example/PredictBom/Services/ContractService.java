@@ -49,7 +49,6 @@ public class ContractService {
     @Transactional
     public ContractResponse addOffer(String username, AddOfferRequest addOfferRequest) {
 
-        System.out.println(addOfferRequest.getPrice());
 
         Optional<Contract> optContract = contractRepository.findById(addOfferRequest.getContractId());
         if(!optContract.isPresent())

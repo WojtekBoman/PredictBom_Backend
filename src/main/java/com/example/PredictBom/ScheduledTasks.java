@@ -16,6 +16,6 @@ public class ScheduledTasks {
 
     @Scheduled(cron = "0 1 1 * * ?")
     public void deleteExpiredTokens() {
-        passwordResetTokenRepository.deleteAllByExpiryDateBefore(new SimpleDateFormat("MM-dd-yyyy HH:mm:ss").format(new Date()));
+        passwordResetTokenRepository.deleteAllByExpiryDateBefore(new SimpleDateFormat("yyyy-MM-DD HH:mm:ss").format(new Date()));
     }
 }
