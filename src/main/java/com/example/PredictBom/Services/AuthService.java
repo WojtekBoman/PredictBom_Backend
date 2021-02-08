@@ -79,7 +79,7 @@ public class AuthService {
         if(roles.get(0).equals("ROLE_PLAYER")) {
             Player player = playerRepository.findByUsername(userDetails.getUsername());
             String[] lastLoginDate = player.getLastLoginDate().split("-");
-            String date = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss").format(new Date());
+            String date = new SimpleDateFormat("yyyy-MM-DD HH:mm:ss").format(new Date());
             String[] dateSplit = date.split("-");
 
             if(!lastLoginDate[0].equals(dateSplit[0])) {

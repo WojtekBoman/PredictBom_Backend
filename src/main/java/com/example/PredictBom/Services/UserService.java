@@ -56,7 +56,7 @@ public class UserService {
     public void createPasswordResetTokenForUser(User user, String token) {
 //      new SimpleDateFormat("MM-dd-yyyy HH:mm:ss").format(new Date());
 
-        SimpleDateFormat sdf = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss");
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-DD HH:mm:ss");
         //Getting current date
         Calendar cal = Calendar.getInstance();
         //Displaying current date in the desired format
@@ -65,7 +65,6 @@ public class UserService {
         cal.add(Calendar.DAY_OF_YEAR,1);
         //Date after adding the days to the current date
         String newDate = sdf.format(cal.getTime());
-        System.out.println(newDate);
         String sha256hex = DigestUtils.sha256Hex(token);
 
         PasswordResetToken myToken = PasswordResetToken.builder().user(user).token(sha256hex).expiryDate(newDate).build();
@@ -86,8 +85,8 @@ public class UserService {
 
     private boolean isTokenExpired(PasswordResetToken passToken) throws ParseException {
         final Calendar cal = Calendar.getInstance();
-        SimpleDateFormat sdf = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss");
-        return sdf.parse(new SimpleDateFormat("MM-dd-yyyy HH:mm:ss").format(new Date())).after(sdf.parse(passToken.getExpiryDate()));
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-DD HH:mm:ss");
+        return sdf.parse(new SimpleDateFormat("yyyy-MM-DD HH:mm:ss").format(new Date())).after(sdf.parse(passToken.getExpiryDate()));
     }
 
     public int changePasswordWithToken(String newPassword, String repeatPassword, String token) throws ParseException {

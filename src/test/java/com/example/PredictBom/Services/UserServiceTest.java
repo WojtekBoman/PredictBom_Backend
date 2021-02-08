@@ -129,7 +129,7 @@ public class UserServiceTest {
         User user = new User(username,email,firstName,surname,oldPassword);
         String tokenId = "idToken";
         String tokenText = UUID.randomUUID().toString();
-        PasswordResetToken token = PasswordResetToken.builder().id(tokenId).token(tokenText).user(user).expiryDate(new SimpleDateFormat("MM-dd-yyyy HH:mm:ss").format(new Date())).build();
+        PasswordResetToken token = PasswordResetToken.builder().id(tokenId).token(tokenText).user(user).expiryDate(new SimpleDateFormat("yyyy-MM-DD HH:mm:ss").format(new Date())).build();
 
         when(passwordResetTokenRepository.findByToken(any(String.class))).thenReturn(Optional.of(token));
         int status = userService.changePasswordWithToken(newPassword,repeatedNewPassword,tokenText);
@@ -152,7 +152,7 @@ public class UserServiceTest {
         cal.setTime(new Date());
         cal.add(Calendar.DATE, -1);
 
-        String date24hAgo = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss").format(cal.getTime());
+        String date24hAgo = new SimpleDateFormat("yyyy-MM-DD HH:mm:ss").format(cal.getTime());
         PasswordResetToken token = PasswordResetToken.builder().id(tokenId).token(tokenText).user(user).expiryDate(date24hAgo).build();
 
         when(passwordResetTokenRepository.findByToken(any(String.class))).thenReturn(Optional.of(token));
@@ -172,7 +172,7 @@ public class UserServiceTest {
         User user = new User(username,email,firstName,surname,oldPassword);
         String tokenId = "idToken";
         String tokenText = UUID.randomUUID().toString();
-        PasswordResetToken token = PasswordResetToken.builder().id(tokenId).token(tokenText).user(user).expiryDate(new SimpleDateFormat("MM-dd-yyyy HH:mm:ss").format(new Date())).build();
+        PasswordResetToken token = PasswordResetToken.builder().id(tokenId).token(tokenText).user(user).expiryDate(new SimpleDateFormat("yyyy-MM-DD HH:mm:ss").format(new Date())).build();
 
         when(passwordResetTokenRepository.findByToken(any(String.class))).thenReturn(Optional.of(token));
         int status = userService.changePasswordWithToken(newPassword,repeatedNewPassword,tokenText);
@@ -203,7 +203,7 @@ public class UserServiceTest {
         cal.setTime(new Date());
         cal.add(Calendar.DATE, -1);
 
-        String date24hAgo = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss").format(cal.getTime());
+        String date24hAgo = new SimpleDateFormat("yyyy-MM-DD HH:mm:ss").format(cal.getTime());
         PasswordResetToken token = PasswordResetToken.builder().id(tokenId).token(tokenText).user(user).expiryDate(date24hAgo).build();
         when(passwordResetTokenRepository.findByToken(any(String.class))).thenReturn(Optional.of(token));when(passwordResetTokenRepository.findByToken(any(String.class))).thenReturn(Optional.of(token));
         int status = userService.validatePasswordResetToken(tokenText);

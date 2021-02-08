@@ -45,7 +45,6 @@ public class TransactionController {
                     transactions = new ArrayList<>(transactionService.getDealerTransactionsByOption(principal.getName(),false,betTitle,marketTitle,marketCategory,sortAttribute,sortDirection));
                     break;
                 default:
-                    System.out.println("Dzien dobry");
                     transactions = new ArrayList<>(transactionService.getDealerTransactions(principal.getName(),betTitle,marketTitle,marketCategory,sortAttribute,sortDirection));
             }
 

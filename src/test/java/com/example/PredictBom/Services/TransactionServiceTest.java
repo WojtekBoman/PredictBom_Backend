@@ -37,7 +37,7 @@ public class TransactionServiceTest {
         GregorianCalendar cal = new GregorianCalendar();
         cal.setTime(new Date());
         cal.add(Calendar.DATE, -1);
-        String date24hAgo = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss").format(cal.getTime());
+        String date24hAgo = new SimpleDateFormat("yyyy-MM-DD HH:mm:ss").format(cal.getTime());
         List<Transaction> transactions = transactionService.getTransactions(betId,option,date24hAgo);
         assertNotNull(transactions);
     }

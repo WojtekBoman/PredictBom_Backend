@@ -24,7 +24,7 @@ public class Offer implements Comparable<Offer> {
     private int contractId;
     private int shares;
     @Builder.Default
-    private String createdDate = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss").format(new Date());
+    private String createdDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
     private double price;
 
 
@@ -43,7 +43,7 @@ public class Offer implements Comparable<Offer> {
     public int compareTo(Offer o) {
         if(this.getPrice() > o.getPrice()) return 1;
         if(this.getPrice() < o.getPrice()) return -1;
-        SimpleDateFormat sdf = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss");
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-DD HH:mm:ss");
         return sdf.parse(this.createdDate).compareTo(sdf.parse(o.getCreatedDate()));
     }
 

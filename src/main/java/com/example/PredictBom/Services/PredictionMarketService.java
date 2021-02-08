@@ -12,6 +12,8 @@ import org.bson.BsonBinarySubType;
 import org.bson.types.Binary;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.BulkOperations;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
@@ -57,6 +59,9 @@ public class PredictionMarketService {
     public static final String MARKET_IS_ALREADY_SOLVED_INFO = "Rynek jest już zakończony";
 
     @Autowired
+    MongoTemplate mongoTemplate;
+
+    @Autowired
     UserService userService;
 
     @Autowired
@@ -89,7 +94,6 @@ public class PredictionMarketService {
         if(!userOptional.isPresent()) return new PredictionMarketResponse(UNLOGGED_USER_CREATING_MARKET_INFO,null);
         if(marketOptional.isPresent()) return new PredictionMarketResponse(MARKET_EXISTING_INFO,null);
         MarketCategory marketCategory;
-
         switch(category){
             case "SPORT":
                 marketCategory = MarketCategory.SPORT;
@@ -148,9 +152,7 @@ public class PredictionMarketService {
             predictionMarket.addBet(newBet);
             predictionMarketRepository.update(predictionMarket);
             betRepository.save(newBet);
-
-//            double contractYesPrice =  Math.round((double)yesPrice) / 100.0;
-//            double contractNoPrice = Math.round((double)noPrice) /100.0;
+            
 
             MarketInfo marketInfo = MarketInfo.builder().marketCategory(predictionMarket.getCategory()).marketCover(predictionMarket.getMarketCover()).topic(predictionMarket.getTopic()).build();
             Contract contractTrue = Contract.builder().id(counterService.getNextId("contracts")).bet(newBet).shares(0).contractOption(true).marketInfo(marketInfo).build();
@@ -159,10 +161,11 @@ public class PredictionMarketService {
             Offer offerFalse = Offer.builder().id(counterService.getNextId("offers")).contractId(contractFalse.getId()).shares(betRequest.getShares()).price(betRequest.getNoPrice()).build();
             contractTrue.addOffer(offerTrue);
             contractFalse.addOffer(offerFalse);
-            contractRepository.save(contractTrue);
-            contractRepository.save(contractFalse);
-            salesOfferRepository.save(offerTrue);
-            salesOfferRepository.save(offerFalse);
+            List<Contract> contractsToSave = new ArrayList<>(Arrays.asList(contractFalse,contractTrue));
+            contractRepository.saveAll(contractsToSave);
+            List<Offer> offersToSave = new ArrayList<>(Arrays.asList(offerFalse,offerTrue));
+            salesOfferRepository.saveAll(offersToSave);
+
 
             BetPrice betPrice = BetPrice.builder().betId(newBet.getId()).yesPrice(betRequest.getYesPrice()).noPrice(betRequest.getNoPrice()).build();
             return MarketWithBetsPricesResponse.builder().info(BET_ADDED_INFO).predictionMarket(predictionMarket).betPrice(betPrice).build();
@@ -189,7 +192,6 @@ public class PredictionMarketService {
             betRepository.deleteBetById(betId);
             List<Contract> contractList = contractRepository.deleteByBetId(betId);
             for(Contract contract : contractList) {
-
                 salesOfferRepository.deleteByContractId(contract.getId());
             }
 
@@ -282,17 +284,20 @@ public class PredictionMarketService {
                 case "SPORT":
                     marketCategory = MarketCategory.SPORT;
                     break;
-                case "GOSPODARKA":
+                case "ECONOMY":
                     marketCategory = MarketCategory.ECONOMY;
                     break;
-                case "CELEBRYCI":
+                case "CELEBRITIES":
                     marketCategory = MarketCategory.CELEBRITIES;
                     break;
-                case "POLITYKA":
+                case "POLICY":
                     marketCategory = MarketCategory.POLICY;
                     break;
-                default:
+                case "OTHER":
                     marketCategory = MarketCategory.OTHER;
+                    break;
+                default:
+                    return new PredictionMarketResponse(NOT_FOUND_CATEGORY_INFO,null);
             }
 
             marketToEdit.setCategory(marketCategory);
@@ -418,7 +423,7 @@ public class PredictionMarketService {
         cal.setTime(new Date());
         cal.add(Calendar.DATE, -1);
 
-        String date24hAgo = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss").format(cal.getTime());
+        String date24hAgo = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(cal.getTime());
         List<Transaction> userTransactions = transactionRepository.findAllByPurchaserAndBetIdAndOptionInLast24hours(username,betId,option,date24hAgo);
         int sumShares = userTransactions.stream().mapToInt(Transaction::getShares).sum();
         if(sumShares + shares > 1000) return BuyContractResponse.builder().info(returnLimitInfo(1000-sumShares)).build();
@@ -525,7 +530,7 @@ public class PredictionMarketService {
         if(optionalContract.isPresent()){
             contract = optionalContract.get();
             contract.setShares(contract.getShares() + buyShares);
-            contract.setModifiedDate(new SimpleDateFormat("MM-dd-yyyy HH:mm:ss").format(new Date()));
+            contract.setModifiedDate(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
             contractRepository.update(contract);
         }else{
             Optional<PredictionMarket> optMarket = predictionMarketRepository.findByMarketId(marketId);
@@ -592,7 +597,7 @@ public class PredictionMarketService {
 
         market.setCorrectBetId(correctBetId);
         market.setCorrectBetOption(true);
-        market.setEndDate(new SimpleDateFormat("MM-dd-yyyy HH:mm:ss").format(new Date()));
+        market.setEndDate(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
         predictionMarketRepository.update(market);
         List<Contract> marketContracts = contractRepository.findAllByMarketIdAndPlayerIdIsNull(marketId);
         for (Contract contract : marketContracts) {
@@ -620,7 +625,6 @@ public class PredictionMarketService {
 
         List<Contract> marketContracts = contractRepository.findAllByMarketIdAndPlayerIdIsNull(marketId);
         for (Contract contract : marketContracts) {
-            System.out.println(contract.getPlayerId());
             if(contract.getOffers() != null) {
                 Offer offer = contract.getOffers().iterator().next();
                 salesOfferRepository.delete(offer);
@@ -630,7 +634,7 @@ public class PredictionMarketService {
 //        contractRepository.deleteAllByPlayerIdIsNull();
         market.setCorrectBetOption(correctOption);
         market.setCorrectBetId(betId);
-        market.setEndDate(new SimpleDateFormat("MM-dd-yyyy HH:mm:ss").format(new Date()));
+        market.setEndDate(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
         predictionMarketRepository.update(market);
 
         return new PredictionMarketResponse(MARKET_SOLVED_INFO,market);

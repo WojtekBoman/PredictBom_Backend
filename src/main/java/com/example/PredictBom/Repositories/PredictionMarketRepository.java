@@ -13,6 +13,8 @@ public interface PredictionMarketRepository extends MongoRepository<PredictionMa
 
     List<PredictionMarket> findAll();
 
+    List<PredictionMarket> findAllByAuthor(String author, Sort sort);
+
     List<PredictionMarket> findByBetsIsNullAndAuthor(String author, Sort sort);
 
     List<PredictionMarket> findByPublishedFalse(String author, Sort sort);

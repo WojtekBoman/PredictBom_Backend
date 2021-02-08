@@ -33,18 +33,14 @@ public class TransactionService {
     }
 
     public List<Transaction> getPurchaserTransactions(String username,String betTitle, String marketTitle, String[] marketCategory, String sortAttribute, String sortDirection){
-        System.out.println(sortAttribute + sortDirection);
         List<Transaction> transactions = transactionRepository.findAllByPurchaser(username, Sort.by(Sort.Direction.fromString(sortDirection),sortAttribute));
-        System.out.println(transactions);
         return filterTransactions(betTitle,marketTitle,marketCategory,transactions);
     }
 
 
 
     public List<Transaction> getDealerTransactions(String username,String betTitle, String marketTitle, String[] marketCategory, String sortAttribute, String sortDirection){
-        System.out.println(sortAttribute + sortDirection);
         List<Transaction> transactions = transactionRepository.findAllByDealer(username, Sort.by(Sort.Direction.fromString(sortDirection),sortAttribute));
-        System.out.println(transactions);
         return filterTransactions(betTitle,marketTitle,marketCategory,transactions);
     }
 

@@ -57,10 +57,8 @@ public class OfferService {
         if (!optOffer.isPresent()) return BuyContractResponse.builder().info(OFFER_IS_NOT_FOUND_INFO).build();
 
         Offer offer = optOffer.get();
-        if (purchaser.getBudget() < shares * offer.getPrice())
-            return BuyContractResponse.builder().info(NOT_ENOUGH_MONEY_INFO).build();
-        if (shares > offer.getShares())
-            BuyContractResponse.builder().info(NOT_ENOUGH_SHARES_INFO).build();
+        if (purchaser.getBudget() < shares * offer.getPrice()) return BuyContractResponse.builder().info(NOT_ENOUGH_MONEY_INFO).build();
+        if (shares > offer.getShares()) return BuyContractResponse.builder().info(NOT_ENOUGH_SHARES_INFO).build();
         offer.setShares(offer.getShares() - shares);
         Optional<Contract> optContract = contractRepository.findById(offer.getContractId());
         if (!optContract.isPresent()) return BuyContractResponse.builder().info(OFFER_IS_NOT_FOUND_INFO).build();
@@ -71,7 +69,7 @@ public class OfferService {
         cal.setTime(new Date());
         cal.add(Calendar.DATE, -1);
 
-        String date24hAgo = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss").format(cal.getTime());
+        String date24hAgo = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(cal.getTime());
         List<Transaction> userTransactions = transactionRepository.findAllByPurchaserAndBetIdAndOptionInLast24hours(username,contract.getBet().getId(),contract.isContractOption(),date24hAgo);
         int sumShares = userTransactions.stream().mapToInt(Transaction::getShares).sum();
         if(sumShares + shares > 1000) return BuyContractResponse.builder().info(returnLimitInfo(1000-sumShares)).build();
@@ -120,7 +118,7 @@ public class OfferService {
         if(optionalContract.isPresent()){
             contract = optionalContract.get();
             contract.setShares(contract.getShares() + buyShares);
-            contract.setModifiedDate(new SimpleDateFormat("MM-dd-yyyy HH:mm:ss").format(new Date()));
+            contract.setModifiedDate(new SimpleDateFormat("yyyy-MM-dd    HH:mm:ss").format(new Date()));
             contractRepository.update(contract);
         }else{
             Optional<PredictionMarket> optMarket = predictionMarketRepository.findByMarketId(marketId);

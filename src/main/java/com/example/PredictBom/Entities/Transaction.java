@@ -18,7 +18,7 @@ public class Transaction {
     @Id
     private int id;
     @Builder.Default
-    private String transactionDate = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss").format(new Date());
+    private String transactionDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
     private boolean option;
     private int shares;
     private double price;
