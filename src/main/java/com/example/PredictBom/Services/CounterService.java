@@ -37,8 +37,6 @@ public class CounterService {
                 options().returnNew(true),
                 Counter.class);
 
-        System.out.println(counter);
-
         return !Objects.isNull(counter) ? counter.getValue() : 1;
     }
 }

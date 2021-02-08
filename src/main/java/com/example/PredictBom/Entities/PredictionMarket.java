@@ -6,7 +6,6 @@ import lombok.Setter;
 import org.bson.types.Binary;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-import sun.java2d.pipe.SpanShapeRenderer;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -15,7 +14,7 @@ import java.util.Set;
 
 @Getter
 @Setter
-@Builder
+@Builder(toBuilder = true)
 @Document(collection = "markets")
 public class PredictionMarket {
 
@@ -28,27 +27,30 @@ public class PredictionMarket {
     private int correctBetId;
     private MarketCategory category;
     @Builder.Default
-    private String createdDate = new SimpleDateFormat("dd/MM/yyyy").format(new Date());
-    private String predictedEndDate;
+    private String createdDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+    @Builder.Default
+    private String endDate;
     private String description;
     private String author;
+    private boolean correctBetOption;
     @Builder.Default
-    private boolean isSolved = false;
-    @Builder.Default
-    private boolean isPublic = false;
+    private boolean published = false;
     private Binary marketCover;
 
 
-    public void solveMarket(int correctBetId) {
-        this.correctBetId = correctBetId;
-        this.isSolved = true;
-    }
 
     public void addBet(Bet bet){
         if(bets == null){
             this.bets = new HashSet<>();
         }
         bets.add(bet);
+    }
+//
+    public void deleteBet(int betId) {
+        if(bets != null) {
+            Bet betToDelete = Bet.builder().id(betId).build();
+            this.bets.remove(betToDelete);
+        }
     }
 
 

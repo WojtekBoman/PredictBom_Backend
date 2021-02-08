@@ -8,6 +8,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 @Getter
@@ -18,23 +19,20 @@ public class Bet {
 
     @Id
     private int id;
+    private int marketId;
+    private String title;
 
-    private String chosenOption;
-    private List<Price> historyOfPricesYesContracts;
-    private List<Price> historyOfPricesNoContracts;
-
-    public void addPriceYesContract(Price price) {
-        if(historyOfPricesYesContracts == null) {
-            this.historyOfPricesYesContracts = new ArrayList<Price>();
-        }
-        historyOfPricesYesContracts.add(price);
+    @Override
+    public boolean equals(Object o) {
+        if(o == null) return false;
+        if(o == this) return true;
+        if(!(o instanceof Bet)) return false;
+        return id == ((Bet) o).getId();
     }
 
-    public void addPriceNoContract(Price price) {
-        if(historyOfPricesNoContracts == null) {
-            this.historyOfPricesNoContracts = new ArrayList<Price>();
-        }
-        historyOfPricesNoContracts.add(price);
+    @Override
+    public int hashCode() {
+        return ((Integer) id).hashCode();
     }
-
 }
+

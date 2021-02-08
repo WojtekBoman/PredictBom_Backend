@@ -1,4 +1,4 @@
-package com.example.PredictBom.Security;
+package com.example.PredictBom.Config;
 
 import com.example.PredictBom.Security.JWT.AuthEntryPointJwt;
 import com.example.PredictBom.Security.JWT.AuthTokenFilter;
@@ -59,7 +59,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .exceptionHandling().authenticationEntryPoint(unauthorizedHandler).and()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
                 .authorizeRequests().antMatchers("/api/auth/**").permitAll()
-                .antMatchers("/api/test/**").permitAll()
+                .antMatchers("/**").permitAll()
                 .anyRequest().authenticated();
 
         http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
