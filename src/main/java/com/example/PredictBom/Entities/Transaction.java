@@ -1,5 +1,6 @@
 package com.example.PredictBom.Entities;
 
+import com.example.PredictBom.Constants.SettingsParams;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -18,7 +19,7 @@ public class Transaction {
     @Id
     private int id;
     @Builder.Default
-    private String transactionDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+    private String transactionDate = new SimpleDateFormat(SettingsParams.DATE_FORMAT).format(new Date());
     private boolean option;
     private int shares;
     private double price;

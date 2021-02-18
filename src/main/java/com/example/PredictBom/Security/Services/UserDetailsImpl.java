@@ -2,6 +2,8 @@ package com.example.PredictBom.Security.Services;
 
 import com.example.PredictBom.Entities.User;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -11,14 +13,19 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+@Getter
+@Setter
 public class UserDetailsImpl implements UserDetails {
 
-    private String username,firstName, surname, email;
+    private final String username;
+    private String firstName;
+    private String surname;
+    private String email;
 
     @JsonIgnore
-    private String password;
+    private final String password;
 
-    private Collection<? extends GrantedAuthority> authorities;
+    private final Collection<? extends GrantedAuthority> authorities;
 
     public UserDetailsImpl(String username, String firstName, String surname, String email, String password, Collection<? extends GrantedAuthority> authorities){
         this.username = username;
@@ -44,29 +51,6 @@ public class UserDetailsImpl implements UserDetails {
                 authorities);
     }
 
-    public String getFirstName() {
-        return firstName;
-    }
-
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
-    }
-
-    public String getSurname() {
-        return surname;
-    }
-
-    public void setSurname(String surname) {
-        this.surname = surname;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

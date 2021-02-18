@@ -1,5 +1,6 @@
 package com.example.PredictBom.Entities;
 
+import com.example.PredictBom.Constants.SettingsParams;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -27,7 +28,7 @@ public class Contract {
     private ContractStatus contractStatus = ContractStatus.PENDING;
     private HashSet<Offer> offers;
     @Builder.Default
-    private String modifiedDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+    private String modifiedDate = new SimpleDateFormat(SettingsParams.DATE_FORMAT).format(new Date());
 
 
     public void addOffer(Offer offer){
@@ -46,10 +47,8 @@ public class Contract {
     }
 
     public void updateOffer(Offer offer) {
-        if(offers != null) {
-            this.offers.remove(offer);
-            this.offers.add(offer);
-        }
+        deleteOffer(offer.getId());
+        addOffer(offer);
     }
 
 

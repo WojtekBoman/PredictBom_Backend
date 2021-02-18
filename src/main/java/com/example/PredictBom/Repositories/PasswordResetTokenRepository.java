@@ -4,7 +4,6 @@ import com.example.PredictBom.Entities.PasswordResetToken;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.Optional;
-import java.util.OptionalInt;
 
 public interface PasswordResetTokenRepository extends MongoRepository<PasswordResetToken,String> {
     Optional<PasswordResetToken> findByToken(String token);

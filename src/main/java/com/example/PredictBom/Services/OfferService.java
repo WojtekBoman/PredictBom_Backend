@@ -1,10 +1,17 @@
 package com.example.PredictBom.Services;
 
+import com.example.PredictBom.Constants.OfferConstants;
 import com.example.PredictBom.Entities.*;
 import com.example.PredictBom.Models.BuyContractResponse;
+import com.example.PredictBom.Models.OffersToBuyResponse;
 import com.example.PredictBom.Repositories.*;
 import com.mongodb.MongoCommandException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
@@ -16,63 +23,55 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
-public class OfferService {
+@RequiredArgsConstructor
+public class OfferService implements BuyingHelper {
 
-    public static final String BOUGHT_SHARES_INFO = "Zakupiono akcje";
-    public static final String OFFER_IS_NOT_FOUND_INFO = "Wybrana oferta nie istnieje";
-    public static final String NOT_ENOUGH_MONEY_INFO = "Masz za mało pieniędzy";
-    public static final String BOUGHT_OWN_OFFERS_INFO = "Nie możesz kupować własnych akcji";
-    public static final String NOT_ENOUGH_SHARES_INFO = "Ta oferta nie zawiera tylu akcji";
+    private final ContractRepository contractRepository;
 
-    @Autowired
-    ContractRepository contractRepository;
+    private final PlayerRepository playerRepository;
 
-    @Autowired
-    PlayerRepository playerRepository;
+    private final PredictionMarketRepository predictionMarketRepository;
 
-    @Autowired
-    PredictionMarketRepository predictionMarketRepository;
+    private final CounterService counterService;
 
-    @Autowired
-    CounterService counterService;
+    private final SalesOfferRepository salesOfferRepository;
 
-    @Autowired
-    SalesOfferRepository salesOfferRepository;
+    private final TransactionRepository transactionRepository;
 
-    @Autowired
-    TransactionRepository transactionRepository;
 
-    public String returnLimitInfo(int sharesToBuy) {
-        return "Przekroczyłeś dzienny limit zakupów akcji dla tej opcji zakładu. Możesz kupić "+ (sharesToBuy) +" akcji";
+    public ResponseEntity<?> getOffers(int betId, boolean chosenOption, Pageable pageable) {
+
+        List<Contract> contracts = contractRepository.findOffersToBuy(betId,chosenOption);
+        List<OffersToBuyResponse> offers = new ArrayList<>();
+        contracts.forEach(contract -> contract.getOffers().forEach(salesOffer -> offers.add(OffersToBuyResponse.builder().dealer(contract.getPlayerId()).contractId(salesOffer.getContractId()).shares(salesOffer.getShares()).price(salesOffer.getPrice()).createdDate(salesOffer.getCreatedDate()).id(salesOffer.getId()).build())));
+        offers.sort(Comparator.comparingDouble(OffersToBuyResponse::getPrice).thenComparing(OffersToBuyResponse::getCreatedDate));
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), offers.size());
+        Page<OffersToBuyResponse> pages = new PageImpl<>(offers.subList(start, end), pageable, offers.size());
+        return ResponseEntity.ok(pages);
     }
-    
+
     @Transactional(value = "transactionManager", propagation = Propagation.REQUIRED)
     @Retryable( value = MongoCommandException.class,
             maxAttempts = 2, backoff = @Backoff(delay = 100))
-    public BuyContractResponse buyShares(String username, int offerId, int shares) throws MongoCommandException {
+    public ResponseEntity<?> buyShares(String username, int offerId, int shares) throws MongoCommandException {
 
         Player purchaser = playerRepository.findByUsername(username);
 
         Optional<Offer> optOffer = salesOfferRepository.findById(offerId);
-        if (!optOffer.isPresent()) return BuyContractResponse.builder().info(OFFER_IS_NOT_FOUND_INFO).build();
+        if (!optOffer.isPresent()) return ResponseEntity.badRequest().body(OfferConstants.OFFER_IS_NOT_FOUND_INFO);
 
         Offer offer = optOffer.get();
-        if (purchaser.getBudget() < shares * offer.getPrice()) return BuyContractResponse.builder().info(NOT_ENOUGH_MONEY_INFO).build();
-        if (shares > offer.getShares()) return BuyContractResponse.builder().info(NOT_ENOUGH_SHARES_INFO).build();
+        if (purchaser.getBudget() < shares * offer.getPrice()) return ResponseEntity.badRequest().body(OfferConstants.NOT_ENOUGH_MONEY_INFO);
+        if (shares > offer.getShares()) return ResponseEntity.badRequest().body(OfferConstants.NOT_ENOUGH_SHARES_INFO);
         offer.setShares(offer.getShares() - shares);
         Optional<Contract> optContract = contractRepository.findById(offer.getContractId());
-        if (!optContract.isPresent()) return BuyContractResponse.builder().info(OFFER_IS_NOT_FOUND_INFO).build();
+        if (!optContract.isPresent()) return ResponseEntity.badRequest().body(OfferConstants.CONTRACT_IS_NOT_FOUND_INFO);
         Contract contract = optContract.get();
-        if(contract.getPlayerId() != null && contract.getPlayerId().equals(username)) return BuyContractResponse.builder().info(BOUGHT_OWN_OFFERS_INFO).build();
+        if(contract.getPlayerId() != null && contract.getPlayerId().equals(username)) return ResponseEntity.badRequest().body(OfferConstants.BOUGHT_OWN_OFFERS_INFO);
 
-        GregorianCalendar cal = new GregorianCalendar();
-        cal.setTime(new Date());
-        cal.add(Calendar.DATE, -1);
-
-        String date24hAgo = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(cal.getTime());
-        List<Transaction> userTransactions = transactionRepository.findAllByPurchaserAndBetIdAndOptionInLast24hours(username,contract.getBet().getId(),contract.isContractOption(),date24hAgo);
-        int sumShares = userTransactions.stream().mapToInt(Transaction::getShares).sum();
-        if(sumShares + shares > 1000) return BuyContractResponse.builder().info(returnLimitInfo(1000-sumShares)).build();
+        ResponseEntity<?> limitInfo = checkBuyingLimit(transactionRepository,username,contract.getBet().getId(), contract.isContractOption(),shares);
+        if(limitInfo != null) return limitInfo;
 
         Player player = playerRepository.findByUsername(contract.getPlayerId());
         if (player != null) {
@@ -108,27 +107,8 @@ public class OfferService {
         purchaser.setBudget(purchaser.getBudget() - shares * offer.getPrice());
         playerRepository.update(purchaser);
 
-        Contract boughtContract = findContractWithSamePrice(username, contract.getBet().getMarketId(), contract.getBet().getId(), contract.isContractOption(), shares);
-        return BuyContractResponse.builder().info(BOUGHT_SHARES_INFO).boughtContract(boughtContract).purchaser(purchaser).build();
+        Contract boughtContract = findContractWithSamePrice(contractRepository,predictionMarketRepository,counterService,username, contract.getBet().getMarketId(), contract.getBet().getId(), contract.isContractOption(), shares);
+        return ResponseEntity.ok(BuyContractResponse.builder().boughtContract(boughtContract).purchaser(purchaser).build());
     }
 
-    private Contract findContractWithSamePrice(String username,int marketId, int betId, boolean option, int buyShares) {
-        Optional<Contract> optionalContract = contractRepository.findByPlayerIdAndBetIdAndContractOption(username,betId,option);
-        Contract contract;
-        if(optionalContract.isPresent()){
-            contract = optionalContract.get();
-            contract.setShares(contract.getShares() + buyShares);
-            contract.setModifiedDate(new SimpleDateFormat("yyyy-MM-dd    HH:mm:ss").format(new Date()));
-            contractRepository.update(contract);
-        }else{
-            Optional<PredictionMarket> optMarket = predictionMarketRepository.findByMarketId(marketId);
-            if(!optMarket.isPresent()) return null;
-            PredictionMarket market = optMarket.get();
-            Set<Bet> bet = market.getBets().stream().filter(bet1 -> bet1.getId() == betId).collect(Collectors.toSet());
-            MarketInfo marketInfo = MarketInfo.builder().topic(market.getTopic()).marketCover(market.getMarketCover()).marketCategory(market.getCategory()).build();
-            contract = Contract.builder().id(counterService.getNextId("contracts")).bet(bet.iterator().next()).contractOption(option).shares(buyShares).marketInfo(marketInfo).playerId(username).build();
-            contractRepository.save(contract);
-        }
-        return contract;
-    }
 }

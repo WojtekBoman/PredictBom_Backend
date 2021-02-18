@@ -1,5 +1,6 @@
 package com.example.PredictBom.Entities;
 
+import com.example.PredictBom.Constants.SettingsParams;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -20,14 +21,12 @@ public class PredictionMarket {
 
     @Id
     private int marketId;
-
-
     private String topic;
     private Set<Bet> bets;
     private int correctBetId;
     private MarketCategory category;
     @Builder.Default
-    private String createdDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+    private String createdDate = new SimpleDateFormat(SettingsParams.DATE_FORMAT).format(new Date());
     @Builder.Default
     private String endDate;
     private String description;
@@ -36,8 +35,6 @@ public class PredictionMarket {
     @Builder.Default
     private boolean published = false;
     private Binary marketCover;
-
-
 
     public void addBet(Bet bet){
         if(bets == null){

@@ -1,5 +1,6 @@
 package com.example.PredictBom.Security.JWT;
 
+import com.example.PredictBom.Constants.SettingsParams;
 import com.example.PredictBom.Security.Services.UserDetailsServiceImpl;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,7 +52,7 @@ public class AuthTokenFilter extends OncePerRequestFilter {
     private String parseJwt(HttpServletRequest request) {
         String headerAuth = request.getHeader("Authorization");
 
-        if (StringUtils.hasText(headerAuth) && headerAuth.startsWith("Bearer ")) {
+        if (StringUtils.hasText(headerAuth) && headerAuth.startsWith(SettingsParams.TOKEN_TYPE+" ")) {
             return headerAuth.substring(7, headerAuth.length());
         }
 

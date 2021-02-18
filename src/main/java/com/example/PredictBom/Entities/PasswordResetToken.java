@@ -15,11 +15,11 @@ public class PasswordResetToken {
     private static final int EXPIRATION = 60 * 24;
 
     @Id
-    private String id;
+    private final String id;
 
-    private String token;
+    private final String token;
 
-    private User user;
+    private final User user;
 
-    private String expiryDate;
+    private final String expiryDate;
 }

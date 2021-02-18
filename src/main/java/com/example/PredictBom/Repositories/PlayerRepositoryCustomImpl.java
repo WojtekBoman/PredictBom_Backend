@@ -1,7 +1,6 @@
 package com.example.PredictBom.Repositories;
 
 import com.example.PredictBom.Entities.Player;
-import com.example.PredictBom.Entities.PredictionMarket;
 import com.mongodb.client.result.UpdateResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;

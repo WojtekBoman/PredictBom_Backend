@@ -10,7 +10,6 @@ import lombok.Setter;
 @Setter
 @Builder
 public class BuyContractResponse {
-    private String info;
     private Player purchaser;
     private Contract boughtContract;
 }

@@ -11,7 +11,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class ContractDetailsResponse {
-    private String info;
     private PredictionMarket predictionMarket;
     private Bet bet;
 }

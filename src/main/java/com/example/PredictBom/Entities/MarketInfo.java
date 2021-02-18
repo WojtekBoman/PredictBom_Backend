@@ -5,8 +5,6 @@ import lombok.Getter;
 import lombok.Setter;
 import org.bson.types.Binary;
 
-import java.util.function.BinaryOperator;
-
 @Getter
 @Setter
 @Builder

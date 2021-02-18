@@ -1,5 +1,6 @@
 package com.example.PredictBom.Entities;
 
+import com.example.PredictBom.Constants.SettingsParams;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -16,7 +17,7 @@ public class Player extends User {
     private double budget;
 
     @Builder.Default
-    private String lastLoginDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+    private String lastLoginDate = new SimpleDateFormat(SettingsParams.DATE_FORMAT).format(new Date());
 
     public Player(String username, String firstName, String surname, String email, String password, double budget) {
         super(username, firstName, surname, email, password);
@@ -26,5 +27,5 @@ public class Player extends User {
     }
 
 
-    
+
 }

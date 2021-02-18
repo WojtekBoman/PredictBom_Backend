@@ -103,11 +103,9 @@ class PlayerControllerTest {
 
         Role player = new Role(ERole.ROLE_PLAYER);
         Role mod = new Role(ERole.ROLE_MODERATOR);
-        Role admin = new Role(ERole.ROLE_ADMIN);
 //
         mongoTemplate.save(player,"roles");
         mongoTemplate.save(mod,"roles");
-        mongoTemplate.save(admin,"roles");
 
         Player playerUser = new Player("RynkoznawcaWojtek", "Wojtek", "Boman",
                 "boman@gmail.com",

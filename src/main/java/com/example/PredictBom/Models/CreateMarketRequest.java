@@ -3,8 +3,6 @@ package com.example.PredictBom.Models;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.boot.context.properties.bind.DefaultValue;
-import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
@@ -25,7 +23,7 @@ public class CreateMarketRequest {
     private String category;
 
     @Size(min = 3, max = 40)
-    private String endDate = "3000-01-01";
+    private String endDate;
 
     @NotBlank
     private String description;
