@@ -1,6 +1,6 @@
 HELP.md
-MongoConfig.java
 target/
+MongoConfig.java
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/

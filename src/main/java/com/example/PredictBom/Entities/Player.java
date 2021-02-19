@@ -17,7 +17,7 @@ public class Player extends User {
     private double budget;
 
     @Builder.Default
-    private String lastLoginDate = new SimpleDateFormat(SettingsParams.DATE_FORMAT).format(new Date());
+    private String lastLoginDate = new SimpleDateFormat(SettingsParams.DATE_FORMAT,SettingsParams.LOCALE_PL).format(new Date());
 
     public Player(String username, String firstName, String surname, String email, String password, double budget) {
         super(username, firstName, surname, email, password);
