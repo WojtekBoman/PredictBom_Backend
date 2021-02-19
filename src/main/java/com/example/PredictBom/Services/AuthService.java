@@ -6,7 +6,6 @@ import com.example.PredictBom.Entities.*;
 import com.example.PredictBom.Models.LoginRequest;
 import com.example.PredictBom.Models.SignupRequest;
 import com.example.PredictBom.Models.JwtResponse;
-import com.example.PredictBom.Models.MessageResponse;
 import com.example.PredictBom.Repositories.*;
 import com.example.PredictBom.Security.JWT.JwtUtils;
 import com.example.PredictBom.Security.Services.UserDetailsImpl;
@@ -145,7 +144,7 @@ public class AuthService {
 
     private void createPasswordResetTokenForUser(User user, String token) {
 
-        SimpleDateFormat sdf = new SimpleDateFormat(SettingsParams.DATE_FORMAT);
+        SimpleDateFormat sdf = new SimpleDateFormat(SettingsParams.DATE_FORMAT,SettingsParams.LOCALE_PL);
         //Getting current date
         Calendar cal = Calendar.getInstance();
         //Displaying current date in the desired format
@@ -198,8 +197,8 @@ public class AuthService {
     }
 
     private boolean isTokenExpired(PasswordResetToken passToken) throws ParseException {
-        SimpleDateFormat sdf = new SimpleDateFormat(SettingsParams.DATE_FORMAT);
-        return sdf.parse(new SimpleDateFormat(SettingsParams.DATE_FORMAT).format(new Date())).after(sdf.parse(passToken.getExpiryDate()));
+        SimpleDateFormat sdf = new SimpleDateFormat(SettingsParams.DATE_FORMAT,SettingsParams.LOCALE_PL);
+        return sdf.parse(new SimpleDateFormat(SettingsParams.DATE_FORMAT,SettingsParams.LOCALE_PL).format(new Date())).after(sdf.parse(passToken.getExpiryDate()));
     }
 
     public int changePasswordWithToken(String newPassword, String repeatPassword, String token) throws ParseException {
@@ -225,7 +224,7 @@ public class AuthService {
     private void updatePlayerBudget(String username) {
         Player player = playerRepository.findByUsername(username);
         String[] lastLoginDate = player.getLastLoginDate().split("-");
-        String date = new SimpleDateFormat(SettingsParams.DATE_FORMAT).format(new Date());
+        String date = new SimpleDateFormat(SettingsParams.DATE_FORMAT, SettingsParams.LOCALE_PL).format(new Date());
         String[] dateSplit = date.split("-");
 
         if (!lastLoginDate[0].equals(dateSplit[0]) || !lastLoginDate[1].equals(dateSplit[1]) || !lastLoginDate[2].substring(0, 4).equals(dateSplit[2].substring(0, 4))) {

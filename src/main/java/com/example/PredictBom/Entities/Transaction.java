@@ -9,6 +9,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import javax.persistence.Id;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 
 @Getter
 @Setter
@@ -19,7 +20,7 @@ public class Transaction {
     @Id
     private int id;
     @Builder.Default
-    private String transactionDate = new SimpleDateFormat(SettingsParams.DATE_FORMAT).format(new Date());
+    private String transactionDate = new SimpleDateFormat(SettingsParams.DATE_FORMAT, SettingsParams.LOCALE_PL).format(new Date());
     private boolean option;
     private int shares;
     private double price;

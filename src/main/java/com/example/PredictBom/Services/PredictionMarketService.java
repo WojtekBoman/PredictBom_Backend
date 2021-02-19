@@ -485,7 +485,7 @@ public class PredictionMarketService implements BuyingHelper {
 
         market.setCorrectBetId(correctBetId);
         market.setCorrectBetOption(true);
-        market.setEndDate(new SimpleDateFormat(SettingsParams.DATE_FORMAT).format(new Date()));
+        market.setEndDate(new SimpleDateFormat(SettingsParams.DATE_FORMAT, SettingsParams.LOCALE_PL).format(new Date()));
         predictionMarketRepository.update(market);
 
         return ResponseEntity.ok(market);

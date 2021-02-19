@@ -11,6 +11,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 
 @Getter
@@ -26,7 +27,7 @@ public class PredictionMarket {
     private int correctBetId;
     private MarketCategory category;
     @Builder.Default
-    private String createdDate = new SimpleDateFormat(SettingsParams.DATE_FORMAT).format(new Date());
+    private String createdDate = new SimpleDateFormat(SettingsParams.DATE_FORMAT, SettingsParams.LOCALE_PL).format(new Date());
     @Builder.Default
     private String endDate;
     private String description;

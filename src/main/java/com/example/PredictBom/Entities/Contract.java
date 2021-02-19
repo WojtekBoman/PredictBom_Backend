@@ -10,6 +10,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Locale;
 
 @Getter
 @Setter
@@ -28,7 +29,7 @@ public class Contract {
     private ContractStatus contractStatus = ContractStatus.PENDING;
     private HashSet<Offer> offers;
     @Builder.Default
-    private String modifiedDate = new SimpleDateFormat(SettingsParams.DATE_FORMAT).format(new Date());
+    private String modifiedDate = new SimpleDateFormat(SettingsParams.DATE_FORMAT, SettingsParams.LOCALE_PL).format(new Date());
 
 
     public void addOffer(Offer offer){

@@ -19,7 +19,7 @@ public interface BuyingHelper {
         cal.setTime(new Date());
         cal.add(Calendar.DATE, -1);
 
-        String date24hAgo = new SimpleDateFormat(SettingsParams.DATE_FORMAT).format(cal.getTime());
+        String date24hAgo = new SimpleDateFormat(SettingsParams.DATE_FORMAT, Locale.GERMANY).format(cal.getTime());
         List<Transaction> userTransactions = transactionRepository.findAllByPurchaserAndBetIdAndOptionInLast24hours(purchaser,betId,option,date24hAgo);
         int sumShares = userTransactions.stream().mapToInt(Transaction::getShares).sum();
         if(sumShares + shares > SettingsParams.LIMIT_PER_DAY) return ResponseEntity.badRequest().body("Przekroczyłeś dzienny limit zakupów akcji dla tej opcji zakładu. Możesz kupić "+ (SettingsParams.LIMIT_PER_DAY - sumShares) +" akcji");
@@ -33,7 +33,7 @@ public interface BuyingHelper {
         if(optionalContract.isPresent()){
             contract = optionalContract.get();
             contract.setShares(contract.getShares() + buyShares);
-            contract.setModifiedDate(new SimpleDateFormat(SettingsParams.DATE_FORMAT).format(new Date()));
+            contract.setModifiedDate(new SimpleDateFormat(SettingsParams.DATE_FORMAT, SettingsParams.LOCALE_PL).format(new Date()));
             contractRepository.update(contract);
         }else{
             Optional<PredictionMarket> optMarket = predictionMarketRepository.findByMarketId(marketId);

@@ -12,6 +12,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import javax.persistence.Id;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 
 @Builder
 @Getter
@@ -25,7 +26,7 @@ public class Offer implements Comparable<Offer> {
     private int contractId;
     private int shares;
     @Builder.Default
-    private String createdDate = new SimpleDateFormat(SettingsParams.DATE_FORMAT).format(new Date());
+    private String createdDate = new SimpleDateFormat(SettingsParams.DATE_FORMAT, SettingsParams.LOCALE_PL).format(new Date());
     private double price;
 
 
