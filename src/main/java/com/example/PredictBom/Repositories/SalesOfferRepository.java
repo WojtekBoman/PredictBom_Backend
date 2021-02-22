@@ -9,5 +9,6 @@ public interface SalesOfferRepository extends MongoRepository<Offer,String>,Sale
 
     Optional<Offer> findById(int id);
     void deleteByContractId(int contractId);
+    void deleteAllByContractId(int contractId);
     void deleteById(int id);
 }

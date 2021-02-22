@@ -16,4 +16,5 @@ public class AuthConstants {
     public static final String PASSWORD_USER_NOT_FOUND_INFO = "Nie udało się zmienić hasła- nie znaleziono użytkownika.";
     public static final String DIFFERENT_PASSWORDS_INFO ="Nie udało się zmienić hasła - hasła nie są identyczne.";
     public static final String USER_NOT_FOUND_BY_MAIL_INFO = "Nie znaleziono żadnego użytkownika o tym adresie e-mail";
+    public static final String EMAIL_SENDED = "Wysłano e-mail na podany adres";
 }

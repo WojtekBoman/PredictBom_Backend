@@ -9,4 +9,5 @@ public class SettingsParams {
     public static final String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
     public static final String TOKEN_TYPE = "Bearer";
     public static final Locale LOCALE_PL = new Locale("pl","PL");
+    public static final String RESET_EMAIL_TOPIC = "Reset hasła - PredictBom";
 }

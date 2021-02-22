@@ -11,6 +11,7 @@ import com.example.PredictBom.Security.JWT.JwtUtils;
 import com.example.PredictBom.Security.Services.UserDetailsImpl;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -46,6 +47,9 @@ public class AuthService {
     private final JavaMailSender emailSender;
 
     private final JwtUtils jwtUtils;
+
+    @Value("${spring.mail.username}")
+    private String emailFrom;
 
     public ResponseEntity<?> signIn(LoginRequest loginRequest) {
 
@@ -133,13 +137,13 @@ public class AuthService {
         User user = userOpt.get();
         createPasswordResetTokenForUser(user, token);
         SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom("predictBom@gmail.com");
+        message.setFrom(emailFrom);
         message.setTo(email);
         message.setText(token);
-        message.setSubject("Reset hasła - Predict Bom");
+        message.setSubject(SettingsParams.RESET_EMAIL_TOPIC);
         emailSender.send(message);
 
-        return ResponseEntity.ok("Wysłano maila");
+        return ResponseEntity.ok(AuthConstants.EMAIL_SENDED);
     }
 
     private void createPasswordResetTokenForUser(User user, String token) {

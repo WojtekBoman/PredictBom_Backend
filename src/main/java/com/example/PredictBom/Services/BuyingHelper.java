@@ -14,20 +14,18 @@ import java.util.stream.Collectors;
 
 public interface BuyingHelper {
 
-    default ResponseEntity<?> checkBuyingLimit(TransactionRepository transactionRepository, String purchaser, int betId, boolean option, int shares) {
+    default int checkBuyingLimit(TransactionRepository transactionRepository, String purchaser, int betId, boolean option, int shares) {
         GregorianCalendar cal = new GregorianCalendar();
         cal.setTime(new Date());
         cal.add(Calendar.DATE, -1);
 
         String date24hAgo = new SimpleDateFormat(SettingsParams.DATE_FORMAT, Locale.GERMANY).format(cal.getTime());
         List<Transaction> userTransactions = transactionRepository.findAllByPurchaserAndBetIdAndOptionInLast24hours(purchaser,betId,option,date24hAgo);
-        int sumShares = userTransactions.stream().mapToInt(Transaction::getShares).sum();
-        if(sumShares + shares > SettingsParams.LIMIT_PER_DAY) return ResponseEntity.badRequest().body("Przekroczyłeś dzienny limit zakupów akcji dla tej opcji zakładu. Możesz kupić "+ (SettingsParams.LIMIT_PER_DAY - sumShares) +" akcji");
 
-        return null;
+        return userTransactions.stream().mapToInt(Transaction::getShares).sum();
     }
 
-    default Contract findContractWithSamePrice(ContractRepository contractRepository, PredictionMarketRepository predictionMarketRepository, CounterService counterService,  String username, int marketId, int betId, boolean option, int buyShares) {
+    default Contract upsertContractWithSamePrice(ContractRepository contractRepository, PredictionMarketRepository predictionMarketRepository, CounterService counterService, String username, int marketId, int betId, boolean option, int buyShares) {
         Optional<Contract> optionalContract = contractRepository.findByPlayerIdAndBetIdAndContractOption(username,betId,option);
         Contract contract;
         if(optionalContract.isPresent()){

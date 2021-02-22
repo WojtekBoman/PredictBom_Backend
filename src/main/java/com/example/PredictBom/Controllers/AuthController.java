@@ -24,6 +24,21 @@ public class AuthController {
 
     private final AuthService authService;
 
+    private ResponseEntity<?> AuthResponseFactory(int status) {
+        switch(status) {
+            case AuthConstants.UPDATED_PASSWORD:
+                return ResponseEntity.ok("Zmieniono hasło");
+            case AuthConstants.CORRECT_TOKEN:
+                return ResponseEntity.ok("Podano prawidłowy token");
+            case AuthConstants.EXPIRED_TOKEN:
+                return ResponseEntity.badRequest().body("Token wygasnął");
+            case AuthConstants.INVALID_TOKEN:
+                return ResponseEntity.badRequest().body("Nieprawidłowy token");
+            default:
+                return ResponseEntity.badRequest().body("Wystąpił błąd");
+        }
+    }
+
     @PostMapping("/signin")
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
 
@@ -37,7 +52,6 @@ public class AuthController {
 
     @PostMapping("/resetPassword")
     public ResponseEntity<?> resetPasswordEmail(@RequestParam("username") String email) {
-
         return authService.resetPasswordEmail(email);
     }
 
@@ -45,34 +59,14 @@ public class AuthController {
     public ResponseEntity<?> checkToken(
             @RequestParam("token") String token) throws ParseException {
 
-        int result = authService.validatePasswordResetToken(token);
-        switch (result) {
-            case AuthConstants.CORRECT_TOKEN:
-                return ResponseEntity.ok("Podano prawidłowy token");
-            case AuthConstants.EXPIRED_TOKEN:
-                return ResponseEntity.badRequest().body("Token wygasnął");
-            case AuthConstants.INVALID_TOKEN:
-                return ResponseEntity.badRequest().body("Nieprawidłowy token");
-            default:
-                return ResponseEntity.badRequest().body("Wystąpił błąd");
-        }
+        int status = authService.validatePasswordResetToken(token);
+        return AuthResponseFactory(status);
     }
-
 
     @PostMapping("/changePassword")
     public ResponseEntity<?> changePasswordWithToken(@RequestBody ChangePasswordWithTokenRequest tokenRequest) throws ParseException {
         int status = authService.changePasswordWithToken(tokenRequest.getNewPassword(), tokenRequest.getRepeatedPassword(), tokenRequest.getToken());
-
-        switch (status) {
-            case AuthConstants.UPDATED_PASSWORD:
-                return ResponseEntity.ok("Zmieniono hasło");
-            case AuthConstants.EXPIRED_TOKEN:
-                return ResponseEntity.badRequest().body("Token wygasnął");
-            case AuthConstants.INVALID_TOKEN:
-                return ResponseEntity.badRequest().body("Nieprawidłowy token");
-            default:
-                return ResponseEntity.badRequest().body("Wystąpił błąd");
-        }
+        return AuthResponseFactory(status);
     }
 
     @PutMapping("/editPassword")

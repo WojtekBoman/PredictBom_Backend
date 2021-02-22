@@ -1,13 +1,13 @@
 package com.example.PredictBom.Services;
 
 import com.example.PredictBom.Constants.OfferConstants;
+import com.example.PredictBom.Constants.SettingsParams;
 import com.example.PredictBom.Entities.*;
 import com.example.PredictBom.Models.BuyContractResponse;
 import com.example.PredictBom.Models.OffersToBuyResponse;
 import com.example.PredictBom.Repositories.*;
 import com.mongodb.MongoCommandException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -62,23 +62,36 @@ public class OfferService implements BuyingHelper {
         Offer offer = optOffer.get();
         if (purchaser.getBudget() < shares * offer.getPrice()) return ResponseEntity.badRequest().body(OfferConstants.NOT_ENOUGH_MONEY_INFO);
         if (shares > offer.getShares()) return ResponseEntity.badRequest().body(OfferConstants.NOT_ENOUGH_SHARES_INFO);
-        offer.setShares(offer.getShares() - shares);
+
         Optional<Contract> optContract = contractRepository.findById(offer.getContractId());
         if (!optContract.isPresent()) return ResponseEntity.badRequest().body(OfferConstants.CONTRACT_IS_NOT_FOUND_INFO);
         Contract contract = optContract.get();
         if(contract.getPlayerId() != null && contract.getPlayerId().equals(username)) return ResponseEntity.badRequest().body(OfferConstants.BOUGHT_OWN_OFFERS_INFO);
+        int sharesLast24h = checkBuyingLimit(transactionRepository, username, contract.getId(), contract.isContractOption(), shares);
+        if(sharesLast24h + shares > SettingsParams.LIMIT_PER_DAY) return ResponseEntity.badRequest().body("Przekroczyłeś dzienny limit zakupów akcji dla tej opcji zakładu. Możesz kupić "+ (SettingsParams.LIMIT_PER_DAY - sharesLast24h) +" akcji");
 
-        ResponseEntity<?> limitInfo = checkBuyingLimit(transactionRepository,username,contract.getBet().getId(), contract.isContractOption(),shares);
-        if(limitInfo != null) return limitInfo;
 
+        Transaction transaction = makeTransaction(username,contract,offer,shares);
+        transactionRepository.save(transaction);
+        purchaser.setBudget(purchaser.getBudget() - shares * offer.getPrice());
+        playerRepository.update(purchaser);
+
+        Contract boughtContract = upsertContractWithSamePrice(contractRepository,predictionMarketRepository,counterService,username, contract.getBet().getMarketId(), contract.getBet().getId(), contract.isContractOption(), shares);
+        return ResponseEntity.ok(BuyContractResponse.builder().boughtContract(boughtContract).purchaser(purchaser).build());
+    }
+
+    private Transaction makeTransaction(String username, Contract contract,Offer offer, int shares) {
         Player player = playerRepository.findByUsername(contract.getPlayerId());
         if (player != null) {
             player.setBudget(player.getBudget() + shares * offer.getPrice());
             playerRepository.update(player);
         }
+
+        offer.setShares(offer.getShares() - shares);
+
         if (offer.getShares() == 0) {
-            salesOfferRepository.deleteById(offerId);
-            contract.deleteOffer(offerId);
+            salesOfferRepository.deleteById(offer.getId());
+            contract.deleteOffer(offer.getId());
             if (contract.getOffers() == null && contract.getShares() == 0) {
                 contractRepository.deleteById(contract.getId());
             } else {
@@ -89,7 +102,8 @@ public class OfferService implements BuyingHelper {
             contract.updateOffer(offer);
             contractRepository.update(contract);
         }
-        Transaction transaction = Transaction.builder()
+
+        return Transaction.builder()
                 .id(counterService.getNextId("transactions"))
                 .price(offer.getPrice())
                 .dealer(contract.getPlayerId())
@@ -99,14 +113,7 @@ public class OfferService implements BuyingHelper {
                 .option(contract.isContractOption())
                 .shares(shares)
                 .build();
-
-
-        transactionRepository.save(transaction);
-        purchaser.setBudget(purchaser.getBudget() - shares * offer.getPrice());
-        playerRepository.update(purchaser);
-
-        Contract boughtContract = findContractWithSamePrice(contractRepository,predictionMarketRepository,counterService,username, contract.getBet().getMarketId(), contract.getBet().getId(), contract.isContractOption(), shares);
-        return ResponseEntity.ok(BuyContractResponse.builder().boughtContract(boughtContract).purchaser(purchaser).build());
     }
+
 
 }
