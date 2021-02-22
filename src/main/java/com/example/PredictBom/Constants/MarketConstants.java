@@ -16,4 +16,5 @@ public class MarketConstants {
     public static final String NOT_FOUND_OFFERS_MATCHED_WITH_PREFERENCES_INFO = "Nie znaleziono ofert pasujących do twoich preferencji";
     public static final String MARKET_IS_ALREADY_SOLVED_INFO = "Rynek jest już zakończony";
     public static final String BUYING_ERROR_INFO = "Wystąpił błąd w trakcie zakupu. Spróbuj ponownie !";
+    public static final String SERVER_BUSY_INFO = "Ruch na stronie jest w tym momencie bardzo duży, spróbuj dokonać zakupu ponownie za chwilę";
 }

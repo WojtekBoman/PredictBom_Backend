@@ -54,30 +54,35 @@ public class OfferService implements BuyingHelper {
             maxAttempts = 2, backoff = @Backoff(delay = 100))
     public ResponseEntity<?> buyShares(String username, int offerId, int shares) throws MongoCommandException {
 
-        Player purchaser = playerRepository.findByUsername(username);
+        try{
+            Player purchaser = playerRepository.findByUsername(username);
 
-        Optional<Offer> optOffer = salesOfferRepository.findById(offerId);
-        if (!optOffer.isPresent()) return ResponseEntity.badRequest().body(OfferConstants.OFFER_IS_NOT_FOUND_INFO);
+            Optional<Offer> optOffer = salesOfferRepository.findById(offerId);
+            if (!optOffer.isPresent()) return ResponseEntity.badRequest().body(OfferConstants.OFFER_IS_NOT_FOUND_INFO);
 
-        Offer offer = optOffer.get();
-        if (purchaser.getBudget() < shares * offer.getPrice()) return ResponseEntity.badRequest().body(OfferConstants.NOT_ENOUGH_MONEY_INFO);
-        if (shares > offer.getShares()) return ResponseEntity.badRequest().body(OfferConstants.NOT_ENOUGH_SHARES_INFO);
+            Offer offer = optOffer.get();
+            if (purchaser.getBudget() < shares * offer.getPrice()) return ResponseEntity.badRequest().body(OfferConstants.NOT_ENOUGH_MONEY_INFO);
+            if (shares > offer.getShares()) return ResponseEntity.badRequest().body(OfferConstants.NOT_ENOUGH_SHARES_INFO);
 
-        Optional<Contract> optContract = contractRepository.findById(offer.getContractId());
-        if (!optContract.isPresent()) return ResponseEntity.badRequest().body(OfferConstants.CONTRACT_IS_NOT_FOUND_INFO);
-        Contract contract = optContract.get();
-        if(contract.getPlayerId() != null && contract.getPlayerId().equals(username)) return ResponseEntity.badRequest().body(OfferConstants.BOUGHT_OWN_OFFERS_INFO);
-        int sharesLast24h = checkBuyingLimit(transactionRepository, username, contract.getId(), contract.isContractOption(), shares);
-        if(sharesLast24h + shares > SettingsParams.LIMIT_PER_DAY) return ResponseEntity.badRequest().body("Przekroczyłeś dzienny limit zakupów akcji dla tej opcji zakładu. Możesz kupić "+ (SettingsParams.LIMIT_PER_DAY - sharesLast24h) +" akcji");
+            Optional<Contract> optContract = contractRepository.findById(offer.getContractId());
+            if (!optContract.isPresent()) return ResponseEntity.badRequest().body(OfferConstants.CONTRACT_IS_NOT_FOUND_INFO);
+            Contract contract = optContract.get();
+            if(contract.getPlayerId() != null && contract.getPlayerId().equals(username)) return ResponseEntity.badRequest().body(OfferConstants.BOUGHT_OWN_OFFERS_INFO);
+            int sharesLast24h = checkBuyingLimit(transactionRepository, username, contract.getId(), contract.isContractOption(), shares);
+            if(sharesLast24h + shares > SettingsParams.LIMIT_PER_DAY) return ResponseEntity.badRequest().body("Przekroczyłeś dzienny limit zakupów akcji dla tej opcji zakładu. Możesz kupić "+ (SettingsParams.LIMIT_PER_DAY - sharesLast24h) +" akcji");
 
 
-        Transaction transaction = makeTransaction(username,contract,offer,shares);
-        transactionRepository.save(transaction);
-        purchaser.setBudget(purchaser.getBudget() - shares * offer.getPrice());
-        playerRepository.update(purchaser);
+            Transaction transaction = makeTransaction(username,contract,offer,shares);
+            transactionRepository.save(transaction);
+            purchaser.setBudget(purchaser.getBudget() - shares * offer.getPrice());
+            playerRepository.update(purchaser);
 
-        Contract boughtContract = upsertContractWithSamePrice(contractRepository,predictionMarketRepository,counterService,username, contract.getBet().getMarketId(), contract.getBet().getId(), contract.isContractOption(), shares);
-        return ResponseEntity.ok(BuyContractResponse.builder().boughtContract(boughtContract).purchaser(purchaser).build());
+            Contract boughtContract = upsertContractWithSamePrice(contractRepository,predictionMarketRepository,counterService,username, contract.getBet().getMarketId(), contract.getBet().getId(), contract.isContractOption(), shares);
+            return ResponseEntity.ok(BuyContractResponse.builder().boughtContract(boughtContract).purchaser(purchaser).build());
+        }catch(MongoCommandException ex) {
+            return ResponseEntity.badRequest().body(OfferConstants.SERVER_BUSY_INFO);
+        }
+
     }
 
     private Transaction makeTransaction(String username, Contract contract,Offer offer, int shares) {

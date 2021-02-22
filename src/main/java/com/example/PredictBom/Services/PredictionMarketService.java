@@ -321,57 +321,62 @@ public class PredictionMarketService implements BuyingHelper {
     @Retryable(value = MongoCommandException.class,
             maxAttempts = 10, backoff = @Backoff(delay = 100))
     public ResponseEntity<?> buyContract(String username, int betId, int marketId, boolean option, int shares, double maxValue) {
-        //Search contracts with matched bets and option with offers
-        List<Contract> contracts = contractRepository.findOffersToBuy(betId, option, username);
-        if (contracts.isEmpty()) return ResponseEntity.badRequest().body(MarketConstants.NOT_FOUND_OFFERS_INFO);
+        try{
+            //Search contracts with matched bets and option with offers
+            List<Contract> contracts = contractRepository.findOffersToBuy(betId, option, username);
+            if (contracts.isEmpty()) return ResponseEntity.badRequest().body(MarketConstants.NOT_FOUND_OFFERS_INFO);
 
-        Player purchaser = playerRepository.findByUsername(username);
-        int sharesLast24h = checkBuyingLimit(transactionRepository, username, betId, option, shares);
-        if(sharesLast24h + shares > SettingsParams.LIMIT_PER_DAY) return ResponseEntity.badRequest().body("Przekroczyłeś dzienny limit zakupów akcji dla tej opcji zakładu. Możesz kupić "+ (SettingsParams.LIMIT_PER_DAY - sharesLast24h) +" akcji");
+            Player purchaser = playerRepository.findByUsername(username);
+            int sharesLast24h = checkBuyingLimit(transactionRepository, username, betId, option, shares);
+            if(sharesLast24h + shares > SettingsParams.LIMIT_PER_DAY) return ResponseEntity.badRequest().body("Przekroczyłeś dzienny limit zakupów akcji dla tej opcji zakładu. Możesz kupić "+ (SettingsParams.LIMIT_PER_DAY - sharesLast24h) +" akcji");
 
-        if (purchaser.getBudget() < shares * maxValue) return ResponseEntity.badRequest().body(MarketConstants.LOW_BUDGET_INFO);
-        List<Offer> salesOffers = new ArrayList<>();
-        int sharesToBuy = 0;
-        for (Contract contract : contracts) {
-            //Collect all offers where value is less than user maxValue
-            salesOffers.addAll(contract.getOffers().stream().filter(offer -> offer.getPrice() <= maxValue).collect(Collectors.toList()));
-            sharesToBuy += salesOffers.stream().mapToInt(Offer::getShares).sum();
-        }
-
-        Collections.sort(salesOffers);
-
-        if (sharesToBuy < shares) return ResponseEntity.badRequest().body(returnCountOfSharesPossibleToBuy(sharesToBuy));
-
-        if (salesOffers.isEmpty()) return ResponseEntity.badRequest().body(MarketConstants.NOT_FOUND_OFFERS_MATCHED_WITH_PREFERENCES_INFO);
-        sharesToBuy = shares;
-        List<Transaction> transactions = new ArrayList<>();
-        for (Offer offer : salesOffers) {
-            if (sharesToBuy > 0) {
-                Optional<Contract> optContract = contractRepository.findById(offer.getContractId());
-                if (!optContract.isPresent()) return ResponseEntity.badRequest().body(MarketConstants.BUYING_ERROR_INFO);
-                Contract contract = optContract.get();
-                Transaction transaction = makeTransaction(purchaser,offer,contract,sharesToBuy,option);
-                transactions.add(transaction);
-                sharesToBuy -= transaction.getShares();
+            if (purchaser.getBudget() < shares * maxValue) return ResponseEntity.badRequest().body(MarketConstants.LOW_BUDGET_INFO);
+            List<Offer> salesOffers = new ArrayList<>();
+            int sharesToBuy = 0;
+            for (Contract contract : contracts) {
+                //Collect all offers where value is less than user maxValue
+                salesOffers.addAll(contract.getOffers().stream().filter(offer -> offer.getPrice() <= maxValue).collect(Collectors.toList()));
+                sharesToBuy += salesOffers.stream().mapToInt(Offer::getShares).sum();
             }
-        }
-        int buyShares = 0;
-        double currentPrice = transactions.get(0).getPrice();
-        for (Transaction transaction : transactions) {
-            if (transaction.getPrice() > currentPrice) {
-                currentPrice = transaction.getPrice();
-                upsertContractWithSamePrice(contractRepository, predictionMarketRepository, counterService, username, marketId, betId, option, buyShares);
-                buyShares = 0;
-            }
-            buyShares += transaction.getShares();
-        }
-        transactionRepository.saveAll(transactions);
-        Contract contract = upsertContractWithSamePrice(contractRepository, predictionMarketRepository, counterService, username, marketId, betId, option, buyShares);
-        double paySum = transactions.stream().mapToDouble(Transaction::getPrice).sum();
-        purchaser.setBudget(purchaser.getBudget() - (float) paySum);
-        playerRepository.update(purchaser);
 
-        return ResponseEntity.ok(BuyContractResponse.builder().purchaser(purchaser).boughtContract(contract).build());
+            Collections.sort(salesOffers);
+
+            if (sharesToBuy < shares) return ResponseEntity.badRequest().body(returnCountOfSharesPossibleToBuy(sharesToBuy));
+
+            if (salesOffers.isEmpty()) return ResponseEntity.badRequest().body(MarketConstants.NOT_FOUND_OFFERS_MATCHED_WITH_PREFERENCES_INFO);
+            sharesToBuy = shares;
+            List<Transaction> transactions = new ArrayList<>();
+            for (Offer offer : salesOffers) {
+                if (sharesToBuy > 0) {
+                    Optional<Contract> optContract = contractRepository.findById(offer.getContractId());
+                    if (!optContract.isPresent()) return ResponseEntity.badRequest().body(MarketConstants.BUYING_ERROR_INFO);
+                    Contract contract = optContract.get();
+                    Transaction transaction = makeTransaction(purchaser,offer,contract,sharesToBuy,option);
+                    transactions.add(transaction);
+                    sharesToBuy -= transaction.getShares();
+                }
+            }
+            int buyShares = 0;
+            double currentPrice = transactions.get(0).getPrice();
+            for (Transaction transaction : transactions) {
+                if (transaction.getPrice() > currentPrice) {
+                    currentPrice = transaction.getPrice();
+                    upsertContractWithSamePrice(contractRepository, predictionMarketRepository, counterService, username, marketId, betId, option, buyShares);
+                    buyShares = 0;
+                }
+                buyShares += transaction.getShares();
+            }
+            transactionRepository.saveAll(transactions);
+            Contract contract = upsertContractWithSamePrice(contractRepository, predictionMarketRepository, counterService, username, marketId, betId, option, buyShares);
+            double paySum = transactions.stream().mapToDouble(Transaction::getPrice).sum();
+            purchaser.setBudget(purchaser.getBudget() - (float) paySum);
+            playerRepository.update(purchaser);
+
+            return ResponseEntity.ok(BuyContractResponse.builder().purchaser(purchaser).boughtContract(contract).build());
+        }catch(MongoCommandException e){
+            return ResponseEntity.badRequest().body(MarketConstants.SERVER_BUSY_INFO);
+        }
+
     }
 
     private Transaction makeTransaction(Player purchaser, Offer offer, Contract contract, int sharesToBuy, boolean option) {
