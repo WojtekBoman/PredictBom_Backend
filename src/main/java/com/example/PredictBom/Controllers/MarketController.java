@@ -52,12 +52,10 @@ public class MarketController {
         return predictionMarketService.deleteMarket(marketId);
     }
 
-
     @GetMapping("/")
     public ResponseEntity<?> getMarkets(@RequestParam String marketTitle, @RequestParam String[] marketCategory,String sortAttribute,String sortDirection,Pageable pageable) {
         try {
-            return ResponseEntity.ok(predictionMarketService.getPublicMarkets(marketTitle, marketCategory,pageable,sortAttribute,sortDirection));
-
+           return predictionMarketService.getPublicMarkets(marketTitle, marketCategory,pageable,sortAttribute,sortDirection);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Błąd");
         }
@@ -66,7 +64,40 @@ public class MarketController {
     @GetMapping("/solved")
     public ResponseEntity<?> getSolvedMarkets(@RequestParam String marketTitle, @RequestParam String[] marketCategory,String sortAttribute,String sortDirection,Pageable pageable) {
         try {
-            return ResponseEntity.ok(predictionMarketService.getSolvedMarkets(marketTitle, marketCategory,pageable,sortAttribute,sortDirection));
+            return predictionMarketService.getSolvedMarkets(marketTitle, marketCategory,pageable,sortAttribute,sortDirection);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Błąd");
+        }
+    }
+
+    @PreAuthorize("hasRole('ROLE_MODERATOR')")
+    @GetMapping("/private")
+    public ResponseEntity<?> getSolvedModMarkets(Principal principal, @RequestParam String marketTitle, @RequestParam String[] marketCategory,String sortAttribute,String sortDirection,Pageable pageable) {
+
+        try {
+            return predictionMarketService.getFilteredPrivateMarkets(principal.getName(), marketTitle, marketCategory,pageable,sortAttribute,sortDirection);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Błąd");
+        }
+    }
+
+    @PreAuthorize("hasRole('ROLE_MODERATOR')")
+    @GetMapping("/solvedByMod")
+    public ResponseEntity<?> getFilteredPrivateMarkets(Principal principal, @RequestParam String marketTitle, @RequestParam String[] marketCategory,String sortAttribute,String sortDirection,Pageable pageable) {
+
+        try {
+            return predictionMarketService.getSolvedModMarkets(principal.getName(), marketTitle, marketCategory,pageable,sortAttribute,sortDirection);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Błąd");
+        }
+    }
+
+    @PreAuthorize("hasRole('ROLE_MODERATOR')")
+    @GetMapping("/public")
+    public ResponseEntity<?> getPublicModMarkets(Principal principal, @RequestParam String marketTitle, @RequestParam String[] marketCategory,String sortAttribute,String sortDirection,Pageable pageable) {
+
+        try {
+            return predictionMarketService.getPublicModMarkets(principal.getName(), marketTitle, marketCategory,pageable,sortAttribute,sortDirection);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Błąd");
         }
@@ -95,41 +126,8 @@ public class MarketController {
     public ResponseEntity<?> getFilteredMarketsWaitingForBets(Principal principal, @RequestParam String marketTitle, @RequestParam String[] marketCategory,String sortAttribute,String sortDirection,Pageable pageable) {
 
         try {
-            return (predictionMarketService.getFilteredMarketsWaitingForBets(principal.getName(), marketTitle, marketCategory,pageable,sortAttribute,sortDirection));
+            return predictionMarketService.getFilteredMarketsWaitingForBets(principal.getName(), marketTitle, marketCategory,pageable,sortAttribute,sortDirection);
 
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Błąd");
-        }
-    }
-
-    @PreAuthorize("hasRole('ROLE_MODERATOR')")
-    @GetMapping("/private")
-    public ResponseEntity<?> getSolvedModMarkets(Principal principal, @RequestParam String marketTitle, @RequestParam String[] marketCategory,String sortAttribute,String sortDirection,Pageable pageable) {
-
-        try {
-            return predictionMarketService.getFilteredPrivateMarkets(principal.getName(), marketTitle, marketCategory,pageable,sortAttribute,sortDirection);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Błąd");
-        }
-    }
-
-    @PreAuthorize("hasRole('ROLE_MODERATOR')")
-    @GetMapping("/solvedByMod")
-    public ResponseEntity<?> getFilteredPrivateMarkets(Principal principal, @RequestParam String marketTitle, @RequestParam String[] marketCategory,String sortAttribute,String sortDirection,Pageable pageable) {
-
-        try {
-            return ResponseEntity.ok(predictionMarketService.getSolvedModMarkets(principal.getName(), marketTitle, marketCategory,pageable,sortAttribute,sortDirection));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Błąd");
-        }
-    }
-
-    @PreAuthorize("hasRole('ROLE_MODERATOR')")
-    @GetMapping("/public")
-    public ResponseEntity<?> getPublicModMarkets(Principal principal, @RequestParam String marketTitle, @RequestParam String[] marketCategory,String sortAttribute,String sortDirection,Pageable pageable) {
-
-        try {
-            return predictionMarketService.getPublicModMarkets(principal.getName(), marketTitle, marketCategory,pageable,sortAttribute,sortDirection);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Błąd");
         }

@@ -1,10 +1,11 @@
-package com.example.PredictBom.Services;
+package com.example.PredictBom.Services.HelperInterfaces;
 
 import com.example.PredictBom.Constants.SettingsParams;
 import com.example.PredictBom.Entities.*;
 import com.example.PredictBom.Repositories.ContractRepository;
 import com.example.PredictBom.Repositories.PredictionMarketRepository;
 import com.example.PredictBom.Repositories.TransactionRepository;
+import com.example.PredictBom.Services.CounterService;
 import org.springframework.http.ResponseEntity;
 
 import java.text.SimpleDateFormat;

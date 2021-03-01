@@ -8,11 +8,13 @@ import com.example.PredictBom.Models.BetPrice;
 import com.example.PredictBom.Models.BuyContractResponse;
 import com.example.PredictBom.Models.MarketWithBetsPricesResponse;
 import com.example.PredictBom.Repositories.*;
+import com.example.PredictBom.Services.HelperInterfaces.AuthorMarketsFinder;
+import com.example.PredictBom.Services.HelperInterfaces.BuyingHelper;
+import com.example.PredictBom.Services.HelperInterfaces.MarketsFinder;
 import com.mongodb.MongoCommandException;
 import lombok.RequiredArgsConstructor;
 import org.bson.BsonBinarySubType;
 import org.bson.types.Binary;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -50,53 +52,62 @@ public class PredictionMarketService implements BuyingHelper {
     private final PlayerRepository playerRepository;
 
     public ResponseEntity<?> createPredictionMarket(String username, String topic, String category, String endDate, String description) throws IllegalArgumentException {
-        Optional<User> userOptional = userRepository.findByUsername(username);
-        Optional<PredictionMarket> marketOptional = predictionMarketRepository.findByTopic(topic);
+        try {
+            Optional<User> userOptional = userRepository.findByUsername(username);
+            Optional<PredictionMarket> marketOptional = predictionMarketRepository.findByTopic(topic);
 
-        if (!userOptional.isPresent()) return ResponseEntity.badRequest().body(MarketConstants.UNLOGGED_USER_CREATING_MARKET_INFO);
-        if (marketOptional.isPresent()) return ResponseEntity.badRequest().body(MarketConstants.MARKET_EXISTING_INFO);
-        MarketCategory marketCategory = MarketCategory.valueOf(category);
+            if (!userOptional.isPresent()) return ResponseEntity.badRequest().body(MarketConstants.UNLOGGED_USER_CREATING_MARKET_INFO);
+            if (marketOptional.isPresent()) return ResponseEntity.badRequest().body(MarketConstants.MARKET_EXISTING_INFO);
+            MarketCategory marketCategory = MarketCategory.valueOf(category);
 
-        if (endDate.length() == 0) endDate = "3000-01-01";
+            if (endDate.length() == 0) endDate = "3000-01-01";
 
-        PredictionMarket predictionMarket = PredictionMarket
-                .builder()
-                .marketId(counterService.getNextId("markets"))
-                .topic(topic)
-                .category(marketCategory)
-                .author(username)
-                .endDate(endDate)
-                .description(description)
-                .build();
-        predictionMarketRepository.save(predictionMarket);
+            PredictionMarket predictionMarket = PredictionMarket
+                    .builder()
+                    .marketId(counterService.getNextId("markets"))
+                    .topic(topic)
+                    .category(marketCategory)
+                    .author(username)
+                    .endDate(endDate)
+                    .description(description)
+                    .build();
+            predictionMarketRepository.save(predictionMarket);
 
 
-        return ResponseEntity.ok(predictionMarket);
+            return ResponseEntity.ok(predictionMarket);
+        }catch(IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(MarketConstants.NOT_FOUND_CATEGORY_INFO);
+        }
     }
 
-    public ResponseEntity<?> editMarket(int marketId, String topic, String category, String endDate, String description) {
-        Optional<PredictionMarket> marketOptional = predictionMarketRepository.findByMarketId(marketId);
-        if (!marketOptional.isPresent()) return ResponseEntity.badRequest().body(MarketConstants.NOT_FOUND_MARKET_INFO);
+    public ResponseEntity<?> editMarket(int marketId, String topic, String category, String endDate, String description) throws IllegalArgumentException {
+        try {
+            Optional<PredictionMarket> marketOptional = predictionMarketRepository.findByMarketId(marketId);
+            if (!marketOptional.isPresent())
+                return ResponseEntity.badRequest().body(MarketConstants.NOT_FOUND_MARKET_INFO);
 
-        PredictionMarket marketToEdit = marketOptional.get();
+            PredictionMarket marketToEdit = marketOptional.get();
 
-        marketToEdit.setTopic(topic);
-        marketToEdit.setEndDate(endDate);
-        marketToEdit.setDescription(description);
-        MarketCategory marketCategory = MarketCategory.valueOf(category);
+            marketToEdit.setTopic(topic);
+            marketToEdit.setEndDate(endDate);
+            marketToEdit.setDescription(description);
+            MarketCategory marketCategory = MarketCategory.valueOf(category);
 
-        marketToEdit.setCategory(marketCategory);
-        if (marketToEdit.getBets() != null) {
-            List<Contract> contracts = contractRepository.findAllByMarketId(marketId);
-            for (Contract contract : contracts) {
-                MarketInfo marketInfo = contract.getMarketInfo();
-                marketInfo.setTopic(topic);
-                marketInfo.setMarketCategory(marketCategory);
-                contractRepository.update(contract);
+            marketToEdit.setCategory(marketCategory);
+            if (marketToEdit.getBets() != null) {
+                List<Contract> contracts = contractRepository.findAllByMarketId(marketId);
+                for (Contract contract : contracts) {
+                    MarketInfo marketInfo = contract.getMarketInfo();
+                    marketInfo.setTopic(topic);
+                    marketInfo.setMarketCategory(marketCategory);
+                    contractRepository.update(contract);
+                }
             }
+            predictionMarketRepository.update(marketToEdit);
+            return ResponseEntity.ok(marketToEdit);
+        } catch (IllegalArgumentException e){
+        return ResponseEntity.badRequest().body(MarketConstants.NOT_FOUND_CATEGORY_INFO);
         }
-        predictionMarketRepository.update(marketToEdit);
-        return ResponseEntity.ok(marketToEdit);
     }
 
     @Transactional
@@ -167,61 +178,75 @@ public class PredictionMarketService implements BuyingHelper {
     }
 
     //GET METHODS
+    private ResponseEntity<?> findAuthorMarkets(String username, String marketTitle, String[] marketCategory, Pageable pageable, String sortAttribute, String sortDirection, AuthorMarketsFinder finder){
+        return finder.findMarkets(username,marketTitle,marketCategory,pageable,sortAttribute,sortDirection);
+    }
 
     //METHOD TO GET PRIVATE MARKETS WITHOUT BETS WHERE AUTHOR IS CURRENTLY LOGGED MODERATOR
     public ResponseEntity<?> getFilteredMarketsWaitingForBets(String username, String marketTitle, String[] marketCategory, Pageable pageable, String sortAttribute, String sortDirection) {
+        return findAuthorMarkets(username, marketTitle, marketCategory, pageable, sortAttribute, sortDirection, (user, title, category, page, sortAttr, sortDir) -> {
+            Pageable pageRequest = PageRequest.of(page.getPageNumber(), page.getPageSize(), Sort.by(Sort.Direction.fromString(sortDir), sortAttr));
+            if (category.length == 0) {
+                return ResponseEntity.ok(predictionMarketRepository.findWaitingForBetsModMarkets(user, title, pageRequest));
+            }
+            return ResponseEntity.ok(predictionMarketRepository.findWaitingForBetsModMarkets(user, title, Arrays.asList(category), pageRequest));
+        });
+    }
 
-        Pageable pageRequest = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.fromString(sortDirection), sortAttribute));
-        if (marketCategory.length == 0) {
-            return ResponseEntity.ok(predictionMarketRepository.findWaitingForBetsModMarkets(username, marketTitle, pageRequest));
-        }
-        return ResponseEntity.ok(predictionMarketRepository.findWaitingForBetsModMarkets(username, marketTitle, Arrays.asList(marketCategory), pageRequest));
+    public ResponseEntity<?> getSolvedModMarkets(String username, String marketTitle, String[] marketCategory, Pageable pageable, String sortAttribute, String sortDirection) {
+        return findAuthorMarkets(username, marketTitle, marketCategory, pageable, sortAttribute, sortDirection, (user, title, category, page, sortAttr, sortDir) -> {
+            Pageable pageRequest = PageRequest.of(page.getPageNumber(), page.getPageSize(), Sort.by(Sort.Direction.fromString(sortDir), sortAttr));
+            if (category.length == 0) {
+                return ResponseEntity.ok(predictionMarketRepository.findSolvedModMarkets(user, title, pageRequest));
+            }
+            return ResponseEntity.ok(predictionMarketRepository.findSolvedModMarkets(user, title, Arrays.asList(category), pageRequest));
+        });
     }
 
     //METHOD TO GET PUBLIC MARKETS WHERE AUTHOR IS LOGGED MODERATOR
     public ResponseEntity<?> getPublicModMarkets(String username, String marketTitle, String[] marketCategory, Pageable pageable, String sortAttribute, String sortDirection) {
-
-        Pageable pageRequest = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.fromString(sortDirection), sortAttribute));
-        if (marketCategory.length == 0) {
-            return ResponseEntity.ok(predictionMarketRepository.findPublicModMarkets(username, marketTitle, pageRequest));
-        }
-        return ResponseEntity.ok(predictionMarketRepository.findPublicModMarkets(username, marketTitle, Arrays.asList(marketCategory), pageRequest));
+        return findAuthorMarkets(username, marketTitle, marketCategory, pageable, sortAttribute, sortDirection, (user, title, category, page, sortAttr, sortDir) -> {
+            Pageable pageRequest = PageRequest.of(page.getPageNumber(), page.getPageSize(), Sort.by(Sort.Direction.fromString(sortDir), sortAttr));
+            if (category.length == 0) {
+                return ResponseEntity.ok(predictionMarketRepository.findPublicModMarkets(user, title, pageRequest));
+            }
+            return ResponseEntity.ok(predictionMarketRepository.findPublicModMarkets(user, title, Arrays.asList(category), pageRequest));
+        });
     }
 
     public ResponseEntity<?> getFilteredPrivateMarkets(String username, String marketTitle, String[] marketCategory, Pageable pageable, String sortAttribute, String sortDirection) {
-        Pageable pageRequest = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.fromString(sortDirection), sortAttribute));
-        if (marketCategory.length == 0) {
-            return ResponseEntity.ok(predictionMarketRepository.findPrivateModMarkets(username, marketTitle, pageRequest));
-        }
-        return ResponseEntity.ok(predictionMarketRepository.findPrivateModMarkets(username, marketTitle, Arrays.asList(marketCategory), pageRequest));
+        return findAuthorMarkets(username, marketTitle, marketCategory, pageable, sortAttribute, sortDirection, (user, title, category, page, sortAttr, sortDir) -> {
+            Pageable pageRequest = PageRequest.of(page.getPageNumber(), page.getPageSize(), Sort.by(Sort.Direction.fromString(sortDir), sortAttr));
+            if (category.length == 0) {
+                return ResponseEntity.ok(predictionMarketRepository.findPrivateModMarkets(user, title, pageRequest));
+            }
+            return ResponseEntity.ok(predictionMarketRepository.findPrivateModMarkets(user, title, Arrays.asList(category), pageRequest));
+        });
+
     }
 
-
-    public Page<PredictionMarket> getPublicMarkets(String marketTitle, String[] marketCategory, Pageable pageable, String sortAttribute, String sortDirection) {
-
-        Pageable pageRequest = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.fromString(sortDirection), sortAttribute));
-        if (marketCategory.length == 0) {
-            return predictionMarketRepository.findPublishedNotSolvedMarkets(marketTitle, pageRequest);
-        }
-        return (predictionMarketRepository.findPublishedNotSolvedMarkets(marketTitle, Arrays.asList(marketCategory), pageRequest));
+    private ResponseEntity<?> findMarkets(String marketTitle, String[] marketCategory, Pageable pageable, String sortAttribute, String sortDirection, MarketsFinder finder){
+        return finder.findMarkets(marketTitle,marketCategory,pageable,sortAttribute,sortDirection);
     }
 
-    public Page<PredictionMarket> getSolvedModMarkets(String username, String marketTitle, String[] marketCategory, Pageable pageable, String sortAttribute, String sortDirection) {
-
-        Pageable pageRequest = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.fromString(sortDirection), sortAttribute));
-        if (marketCategory.length == 0) {
-            return predictionMarketRepository.findSolvedModMarkets(username, marketTitle, pageRequest);
-        }
-        return (predictionMarketRepository.findSolvedModMarkets(username, marketTitle, Arrays.asList(marketCategory), pageRequest));
+    public ResponseEntity<?> getPublicMarkets(String marketTitle, String[] marketCategory, Pageable pageable, String sortAttribute, String sortDirection) {
+        return findMarkets(marketTitle, marketCategory, pageable, sortAttribute, sortDirection, (title, category, page, sortAttr, sortDir) -> {
+            Pageable pageRequest = PageRequest.of(page.getPageNumber(), page.getPageSize(), Sort.by(Sort.Direction.fromString(sortDir), sortAttr));
+            if (category.length == 0) {
+                return ResponseEntity.ok(predictionMarketRepository.findPublishedNotSolvedMarkets(title, pageRequest));
+            }
+            return ResponseEntity.ok(predictionMarketRepository.findPublishedNotSolvedMarkets(title, Arrays.asList(category), pageRequest));
+        });
     }
 
-    public Page<PredictionMarket> getSolvedMarkets(String marketTitle, String[] marketCategory, Pageable pageable, String sortAttribute, String sortDirection) {
-
-        Pageable pageRequest = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.fromString(sortDirection), sortAttribute));
-        if (marketCategory.length == 0) {
-            return predictionMarketRepository.findSolvedMarkets(marketTitle, pageRequest);
-        }
-        return (predictionMarketRepository.findSolvedMarkets(marketTitle, Arrays.asList(marketCategory), pageRequest));
+    public ResponseEntity<?> getSolvedMarkets(String marketTitle, String[] marketCategory, Pageable pageable, String sortAttribute, String sortDirection) {
+        return findMarkets(marketTitle, marketCategory, pageable, sortAttribute, sortDirection, (title, category, page, sortAttr, sortDir) -> {
+            Pageable pageRequest = PageRequest.of(page.getPageNumber(), page.getPageSize(), Sort.by(Sort.Direction.fromString(sortDir), sortAttr));
+            if (category.length == 0) {
+                return ResponseEntity.ok(predictionMarketRepository.findSolvedMarkets(title, pageRequest));
+            }
+            return ResponseEntity.ok(predictionMarketRepository.findSolvedMarkets(title, Arrays.asList(category), pageRequest));
+        });
     }
 
     public ResponseEntity<?> getMarketById(int id) {
